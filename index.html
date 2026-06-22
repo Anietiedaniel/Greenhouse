@@ -11,15 +11,12 @@
 </head>
 <body>
 
-  <!-- Ambient glow orbs -->
   <div class="bg-orb bg-orb--1"></div>
   <div class="bg-orb bg-orb--2"></div>
   <div class="bg-orb bg-orb--3"></div>
 
-  <!-- ─── NAVBAR ─────────────────────────────── -->
   <nav class="navbar">
     <div class="navbar__inner">
-
       <div class="navbar__brand">
         <div class="navbar__logo">
           <svg viewBox="0 0 32 32" fill="none">
@@ -42,14 +39,11 @@
         <div class="navbar__time" id="navTime">--:--:--</div>
         <div class="navbar__date" id="navDate">Loading…</div>
       </div>
-
     </div>
   </nav>
 
-  <!-- ─── MAIN ───────────────────────────────── -->
   <main class="main">
 
-    <!-- ── HERO ─────────────────────────────── -->
     <section class="hero">
       <div class="hero__eyebrow">
         <span class="hero__dot"></span>
@@ -62,12 +56,9 @@
       <p class="hero__desc" id="heroDesc">Connecting to your greenhouse sensors…</p>
     </section>
 
-    <!-- ── GRID ──────────────────────────────── -->
     <div class="grid">
 
-      <!-- BIG TANK CARD -->
       <div class="tank-card glass">
-
         <div class="tank-card__top">
           <div class="tc-label">
             <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
@@ -78,10 +69,8 @@
           <div class="tc-pct" id="tankPct">—</div>
         </div>
 
-        <!-- Tank vessel -->
         <div class="tank-scene">
           <div class="tank-vessel" id="tank">
-
             <div class="tank-shine"></div>
 
             <div class="tank-water" id="tankWater">
@@ -118,74 +107,20 @@
           </div>
         </div>
 
-        <!-- Bottom status pills -->
-        <div class="tank-pills">
-          <div class="pill" id="pillLow">
-            <div class="pill-dot"></div>
-            <span class="pill-label">Bottom</span>
-            <span class="pill-val" id="pillLowVal">—</span>
-          </div>
-          <div class="pill" id="pillHigh">
-            <div class="pill-dot"></div>
-            <span class="pill-label">Top</span>
-            <span class="pill-val" id="pillHighVal">—</span>
+        <div class="tank-status-container">
+          <div class="status-card-unified">
+            <span class="status-title">Water Status</span>
+            <div class="status-badge-wrapper" id="waterStatusWrapper">
+              <span class="status-indicator-dot"></span>
+              <span class="status-text-val" id="waterStatusText">Half Full</span>
+            </div>
           </div>
         </div>
-
       </div>
-      <!-- /tank-card -->
-
-      <!-- RIGHT COLUMN CARDS -->
       <div class="side-cards">
 
-        <!-- Water Level -->
-        <div class="info-card glass" id="cardLevel">
-          <div class="info-card__icon ic-blue">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-            </svg>
-          </div>
-          <div class="info-card__body">
-            <div class="info-card__lbl">Water Level</div>
-            <div class="info-card__val" id="levelVal">—</div>
-          </div>
-          <div class="info-card__badge" id="levelBadge"><span>—</span></div>
-        </div>
-
-        <!-- Bottom Sensor -->
-        <div class="info-card glass" id="cardLow">
-          <div class="info-card__icon ic-green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M8 12l3 3 5-5"/>
-            </svg>
-          </div>
-          <div class="info-card__body">
-            <div class="info-card__lbl">Water at Bottom</div>
-            <div class="info-card__val" id="lowVal">—</div>
-          </div>
-          <div class="info-card__badge" id="lowBadge"><span>—</span></div>
-        </div>
-
-        <!-- Top Sensor -->
-        <div class="info-card glass" id="cardHigh">
-          <div class="info-card__icon ic-purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="17 11 12 6 7 11"/>
-              <polyline points="17 18 12 13 7 18"/>
-            </svg>
-          </div>
-          <div class="info-card__body">
-            <div class="info-card__lbl">Water at Top</div>
-            <div class="info-card__val" id="highVal">—</div>
-          </div>
-          <div class="info-card__badge" id="highBadge"><span>—</span></div>
-        </div>
-
-        <!-- Pump Control -->
         <div class="info-card info-card--pump glass" id="cardPump">
           <div class="info-card__icon ic-cyan">
-            <!-- Pump / water-flow icon -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 12h4l3-9 4 18 3-9h4"/>
             </svg>
@@ -198,47 +133,32 @@
           <div class="info-card__badge" id="pumpActiveBadge"><span>—</span></div>
         </div>
 
-        <!-- Pump toggle button — full-width row below the card -->
         <button class="pump-btn pump-btn--off" id="pumpToggleBtn">Turn Pump On</button>
-
-        <!-- Last Updated -->
-        <div class="info-card glass" id="cardUpdated">
-          <div class="info-card__icon ic-amber">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
+        
+        <div class="info-card system-notification-card glass" id="notificationCenterCard">
+          <div class="notif-card__header">
+            <div class="info-card__icon ic-purple animate-pulse">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </div>
+            <div class="notif-card__title-wrap">
+              <div class="info-card__lbl">System Alerts</div>
+              <div class="notif-card__sub" id="notifTypeLabel">General Broadcast</div>
+            </div>
           </div>
-          <div class="info-card__body">
-            <div class="info-card__lbl">Last Checked</div>
-            <div class="info-card__val" id="updatedVal">—</div>
+          <div class="notif-card__body">
+            <p class="notification-msg" id="generalNotificationMsg">System active. Monitoring live greenhouse nodes...</p>
+            <div class="notif-badge-row">
+              <span class="badge badge--status" id="notifStatusTag">Online</span>
+              <span class="badge badge--time" id="notifTimeTag">Just Now</span>
+            </div>
           </div>
-          <div class="info-card__badge info-card__badge--live"><span>Live</span></div>
-        </div>
-
-        <!-- Connection -->
-        <div class="info-card glass" id="cardConn">
-          <div class="info-card__icon ic-teal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1.42 9a16 16 0 0121.16 0"/>
-              <path d="M5 12.55a11 11 0 0114.08 0"/>
-              <path d="M10.54 16.1a6 6 0 012.92 0"/>
-              <circle cx="12" cy="20" r="1" fill="currentColor"/>
-            </svg>
-          </div>
-          <div class="info-card__body">
-            <div class="info-card__lbl">Connection</div>
-            <div class="info-card__val" id="connVal">Connecting…</div>
-          </div>
-          <div class="info-card__badge" id="connBadge"><span id="connBadgeTxt">—</span></div>
         </div>
 
       </div>
-      <!-- /side-cards -->
-    </div>
-    <!-- /grid -->
-
-    <!-- ── ACTIVITY ──────────────────────────── -->
+      </div>
     <section class="activity glass">
       <div class="activity__hd">
         <div class="activity__title">
@@ -256,7 +176,6 @@
 
   </main>
 
-  <!-- ─── FOOTER ──────────────────────────────── -->
   <footer class="footer">
     <div class="footer__inner">
       <div class="footer__l">
