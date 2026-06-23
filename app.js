@@ -6,7 +6,7 @@
 import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue, set }       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// ── Firebase Configuration ───────────────────────────────────────
+// ── Firebase ─────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey:            "AIzaSyALBmd_8LYo15JPQgnhTKDn_5UGd8sNNKQ",
   authDomain:        "green-house-firmware.firebaseapp.com",
@@ -21,51 +21,59 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
-// ── State Management ─────────────────────────────────────────────
-let prev = { level: null, pumpActive: null, pumpOverride: null };
+// ── State ─────────────────────────────────────────────────────────
+let prev = { level: null, low: null, high: null, pumpActive: null, pumpOverride: null };
 let logs = [];
-let pumpOverrideState = false;
-let currentLevel      = null;
 
-// ── DOM Engine Selection ─────────────────────────────────────────
+// ── DOM ───────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
 const dom = {
-  navTime:                $("navTime"),
-  navDate:                $("navDate"),
-  liveBadge:              $("liveBadge"),
+  navTime:      $("navTime"),
+  navDate:      $("navDate"),
+  liveBadge:    $("liveBadge"),
 
-  heroStatus:             $("heroStatus"),
-  heroDesc:               $("heroDesc"),
+  heroStatus:   $("heroStatus"),
+  heroDesc:     $("heroDesc"),
 
-  tank:                   $("tank"),
-  tankWater:              $("tankWater"),
-  tankPct:                $("tankPct"),
-  tankError:              $("tankError"),
+  tank:         $("tank"),
+  tankWater:    $("tankWater"),
+  tankPct:      $("tankPct"),
+  tankError:    $("tankError"),
 
-  // Unified Status Element
-  waterStatusWrapper:     $("waterStatusWrapper"),
-  waterStatusText:        $("waterStatusText"),
+  pillLow:      $("pillLow"),
+  pillLowVal:   $("pillLowVal"),
+  pillHigh:     $("pillHigh"),
+  pillHighVal:  $("pillHighVal"),
 
-  // Pump Elements
-  pumpActiveVal:          $("pumpActiveVal"),
-  pumpActiveBadge:        $("pumpActiveBadge"),
-  pumpToggleBtn:          $("pumpToggleBtn"),
-  pumpModeLabel:          $("pumpModeLabel"),
+  levelVal:     $("levelVal"),
+  levelBadge:   $("levelBadge"),
 
-  // General Notification Engine Hub
-  generalNotificationMsg: $("generalNotificationMsg"),
-  notifTypeLabel:         $("notifTypeLabel"),
-  notifStatusTag:         $("notifStatusTag"),
-  notifTimeTag:           $("notifTimeTag"),
+  lowVal:       $("lowVal"),
+  lowBadge:     $("lowBadge"),
 
-  feed:                   $("feed"),
-  clearBtn:               $("clearBtn"),
-  footerDot:              $("footerDot"),
-  footerTxt:              $("footerTxt"),
+  highVal:      $("highVal"),
+  highBadge:    $("highBadge"),
+
+  updatedVal:   $("updatedVal"),
+
+  connVal:      $("connVal"),
+  connBadge:    $("connBadge"),
+  connBadgeTxt: $("connBadgeTxt"),
+
+  // Pump UI
+  pumpActiveVal:   $("pumpActiveVal"),
+  pumpActiveBadge: $("pumpActiveBadge"),
+  pumpToggleBtn:   $("pumpToggleBtn"),
+  pumpModeLabel:   $("pumpModeLabel"),
+
+  feed:         $("feed"),
+  clearBtn:     $("clearBtn"),
+  footerDot:    $("footerDot"),
+  footerTxt:    $("footerTxt"),
 };
 
-// ── Clock Loop ───────────────────────────────────────────────────
+// ── Clock ─────────────────────────────────────────────────────────
 function tick() {
   const n = new Date();
   dom.navTime.textContent = n.toLocaleTimeString("en-GB", { hour12: false });
@@ -76,7 +84,7 @@ function tick() {
 tick();
 setInterval(tick, 1000);
 
-// ── Animation Helpers ────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────
 const timeStr = (d = new Date()) => d.toLocaleTimeString("en-GB", { hour12: false });
 
 function pop(el) {
@@ -87,32 +95,29 @@ function pop(el) {
   el.addEventListener("animationend", () => el.classList.remove("pop"), { once: true });
 }
 
-// ── Tank Configuration Map ───────────────────────────────────────
+// ── Level config ──────────────────────────────────────────────────
 const LEVELS = {
-  FULL:  { pct: 100, heroTxt: "Full",  heroCls: "s-full",  wrapperCls: "is-full",  desc: "Your tank is completely full. 💧" },
-  HALF:  { pct: 50,  heroTxt: "Half Full", heroCls: "s-half", wrapperCls: "is-half",  desc: "Your tank is halfway. Consider refilling soon." },
-  EMPTY: { pct: 0,   heroTxt: "Empty", heroCls: "s-empty", wrapperCls: "is-empty", desc: "Your tank is empty. Please refill as soon as possible." },
-  ERROR: { pct: 0,   heroTxt: "Error", heroCls: "s-error", wrapperCls: "is-empty", desc: "Something needs attention — check your sensors." },
+  FULL:  { pct: 100, heroTxt: "Full",  heroCls: "s-full",  badgeTxt: "Full",    badgeCls: "b-yes",  desc: "Your tank is completely full. 💧" },
+  HALF:  { pct: 50,  heroTxt: "Half",  heroCls: "s-half",  badgeTxt: "Half",    badgeCls: "b-warn", desc: "Your tank is halfway. Consider refilling soon." },
+  EMPTY: { pct: 0,   heroTxt: "Empty", heroCls: "s-empty", badgeTxt: "Empty",   badgeCls: "b-no",   desc: "Your tank is empty. Please refill as soon as possible." },
+  ERROR: { pct: 0,   heroTxt: "Error", heroCls: "s-error", badgeTxt: "Problem", badgeCls: "b-err",  desc: "Something needs attention — check your sensors." },
 };
 
-const HERO_CLS_ALL  = ["s-full", "s-half", "s-empty", "s-error"];
-const TANK_CLS_ALL  = ["v-full", "v-error"];
-const WRAP_CLS_ALL  = ["is-full", "is-half", "is-empty"];
+const HERO_CLS_ALL = ["s-full","s-half","s-empty","s-error"];
+const TANK_CLS_ALL = ["v-full","v-error"];
 
-// ── Unified Level Renderer ───────────────────────────────────────
+// ── Render level ──────────────────────────────────────────────────
 function renderLevel(levelRaw) {
   const key = (levelRaw ?? "").toUpperCase();
   const cfg = LEVELS[key];
   if (!cfg) return;
 
-  // Hero section updates
   dom.heroStatus.textContent = cfg.heroTxt;
   dom.heroStatus.classList.remove(...HERO_CLS_ALL);
   dom.heroStatus.classList.add(cfg.heroCls);
   dom.heroDesc.textContent = cfg.desc;
   pop(dom.heroStatus);
 
-  // Dynamic physical tank vessel adjustments
   dom.tankWater.style.height = cfg.pct + "%";
   dom.tankPct.textContent    = cfg.pct + "%";
   dom.tank.classList.remove(...TANK_CLS_ALL);
@@ -122,29 +127,49 @@ function renderLevel(levelRaw) {
   if (key === "ERROR") dom.tankError.classList.add("show");
   else                 dom.tankError.classList.remove("show");
 
-  // Single water status display engine mapping
-  dom.waterStatusText.textContent = cfg.heroTxt;
-  dom.waterStatusWrapper.classList.remove(...WRAP_CLS_ALL);
-  dom.waterStatusWrapper.classList.add(cfg.wrapperCls);
-  pop(dom.waterStatusWrapper);
+  if (dom.levelVal) {
+    dom.levelVal.textContent = cfg.heroTxt;
+    pop(dom.levelVal);
+  }
+  if (dom.levelBadge) {
+    dom.levelBadge.className = "info-card__badge " + cfg.badgeCls;
+    dom.levelBadge.innerHTML = `<span>${cfg.badgeTxt}</span>`;
+  }
 }
 
-// ── General Alert/Broadcast Channel ──────────────────────────────
-function broadcastMessage(message, type = "General Broadcast", statusTag = "Online") {
-  if (!dom.generalNotificationMsg) return;
-  dom.generalNotificationMsg.textContent = message;
-  dom.notifTypeLabel.textContent = type;
-  dom.notifStatusTag.textContent = statusTag;
-  dom.notifTimeTag.textContent = timeStr();
-  pop(dom.generalNotificationMsg);
+// ── Render sensor ─────────────────────────────────────────────────
+function renderSensor({ val, valEl, badgeEl, pillEl, pillValEl, activeLabel, inactiveLabel, pillLabel }) {
+  const isActive = val === true;
+  const unknown  = val === null;
+
+  const dispTxt  = unknown ? "Waiting…" : (isActive ? activeLabel : inactiveLabel);
+  const pillTxt  = unknown ? "—" : (isActive ? "Yes" : "No");
+  const badgeCls = unknown ? "" : (isActive ? "b-yes" : "b-no");
+  const pillCls  = unknown ? "" : (isActive ? "p-active" : "p-inactive");
+
+  if (valEl) {
+    valEl.textContent = dispTxt;
+    pop(valEl);
+  }
+  if (badgeEl) {
+    badgeEl.className = "info-card__badge " + badgeCls;
+    badgeEl.innerHTML = `<span>${pillTxt}</span>`;
+  }
+  if (pillEl) {
+    pillEl.className = "pill " + pillCls;
+    const labelEl = pillEl.querySelector(".pill-label");
+    if (labelEl) labelEl.textContent = pillLabel;
+  }
+  if (pillValEl) {
+    pillValEl.textContent = pillTxt;
+  }
 }
 
-// ── Pump Actuator Controls ───────────────────────────────────────
+// ── Render pump ───────────────────────────────────────────────────
 function renderPump(pumpActive, pumpOverride, level) {
-  const unknown = pumpActive === null;
-  const isFull  = (level ?? "").toUpperCase() === "FULL";
+  const unknown  = pumpActive === null;
+  const isFull   = (level ?? "").toUpperCase() === "FULL";
 
-  // System tracking status updates
   if (dom.pumpActiveVal) {
     dom.pumpActiveVal.textContent = unknown ? "Waiting…" : (pumpActive ? "Running" : "Idle");
     pop(dom.pumpActiveVal);
@@ -154,7 +179,6 @@ function renderPump(pumpActive, pumpOverride, level) {
     dom.pumpActiveBadge.innerHTML = `<span>${unknown ? "—" : pumpActive ? "On" : "Off"}</span>`;
   }
 
-  // Auto safety override control layout updates
   if (dom.pumpToggleBtn) {
     dom.pumpToggleBtn.disabled = isFull;
     dom.pumpToggleBtn.textContent = pumpOverride ? "Turn Pump Off" : "Turn Pump On";
@@ -169,7 +193,10 @@ function renderPump(pumpActive, pumpOverride, level) {
   }
 }
 
-// ── Pump Toggle Click Handlers ────────────────────────────────────
+// ── Pump toggle handler ───────────────────────────────────────────
+let pumpOverrideState = false;
+let currentLevel      = null;
+
 if (dom.pumpToggleBtn) {
   dom.pumpToggleBtn.addEventListener("click", async () => {
     const isFull = (currentLevel ?? "").toUpperCase() === "FULL";
@@ -179,16 +206,14 @@ if (dom.pumpToggleBtn) {
     try {
       await set(ref(db, "/WaterTank/PumpOverride"), next);
       addLog(next ? "Pump turned ON manually 🚿" : "Pump turned OFF manually", next ? "green" : "amber");
-      broadcastMessage(next ? "User triggered water loop pump." : "User shut down water loop pump manual line.", "Manual Pump Override", "Active");
     } catch (e) {
-      addLog("Failed to send pump command", "red");
-      broadcastMessage("Transmission error executing command on node link.", "System Error", "Fault");
+      addLog("Failed to send pump command — check connection", "red");
       console.error(e);
     }
   });
 }
 
-// ── Historical Logging Hub ───────────────────────────────────────
+// ── Activity log ──────────────────────────────────────────────────
 function addLog(msg, pip = "green") {
   logs.unshift({ msg, pip, t: timeStr() });
   if (logs.length > 40) logs.pop();
@@ -196,6 +221,7 @@ function addLog(msg, pip = "green") {
 }
 
 function renderFeed() {
+  if (!dom.feed) return;
   if (!logs.length) {
     dom.feed.innerHTML = '<div class="feed-empty">Waiting for updates from your greenhouse…</div>';
     return;
@@ -209,45 +235,53 @@ function renderFeed() {
   `).join("");
 }
 
-dom.clearBtn.addEventListener("click", () => { logs = []; renderFeed(); });
-
-// ── Core Network Indicators ──────────────────────────────────────
-function setConnected(on) {
-  dom.liveBadge.classList.toggle("off", !on);
-  dom.footerDot.classList.toggle("on", on);
-  dom.footerTxt.textContent = on
-    ? "Live — receiving updates from your greenhouse"
-    : "Reconnecting to your greenhouse…";
+if (dom.clearBtn) {
+  dom.clearBtn.addEventListener("click", () => { logs = []; renderFeed(); });
 }
 
-// ── Firebase Pipeline Realtime Stream ────────────────────────────
+// ── Connection UI ─────────────────────────────────────────────────
+function setConnected(on) {
+  if (dom.liveBadge) dom.liveBadge.classList.toggle("off", !on);
+  if (dom.connVal) dom.connVal.textContent = on ? "Connected" : "Disconnected";
+  if (dom.connBadge) dom.connBadge.className = "info-card__badge " + (on ? "b-yes" : "b-no");
+  if (dom.connBadgeTxt) dom.connBadgeTxt.textContent = on ? "Online" : "Offline";
+  if (dom.footerDot) dom.footerDot.classList.toggle("on", on);
+  if (dom.footerTxt) {
+    dom.footerTxt.textContent = on
+      ? "Live — receiving updates from your greenhouse"
+      : "Reconnecting to your greenhouse…";
+  }
+}
 
-// Connection Listeners
+// ── Firebase listeners ────────────────────────────────────────────
+
+// Connection state
 onValue(ref(db, ".info/connected"), snap => {
   const on = snap.val() === true;
   setConnected(on);
-  if (on) {
-    addLog("Connected — your greenhouse is online 🌿", "green");
-    broadcastMessage("System network handshake successful. All streams reporting online.", "System Broadcast", "Online");
-  } else {
-    addLog("Connection lost — retrying…", "red");
-    broadcastMessage("Lost connection to satellite system terminal hub.", "Telemetry Outage", "Offline");
-  }
+  addLog(on ? "Connected — your greenhouse is online 🌿" : "Connection lost — retrying…", on ? "green" : "red");
 });
 
-// Central Data Processing Loop
+// WaterTank listener
 onValue(ref(db, "WaterTank"), snap => {
   const data = snap.val();
   if (!data) { addLog("Waiting for sensor data…", "blue"); return; }
 
-  const level        = data.Level           ?? null;  // "FULL"|"HALF"|"EMPTY"|"ERROR"
-  const pumpActive   = data.PumpActiveState ?? null;  // bool: physical configuration feedback
-  const pumpOverride = data.PumpOverride    ?? false; // bool: manually defined execution path
+  const level        = data.Level          ?? null;
+  const low          = data.LowSensor      ?? null;
+  const high         = data.HighSensor     ?? null;
+  const pumpActive   = data.PumpActiveState ?? null;
+  const pumpOverride = data.PumpOverride   ?? false;
 
   currentLevel      = level;
   pumpOverrideState = pumpOverride;
 
-  // Level Changes Engine
+  if (dom.updatedVal) {
+    dom.updatedVal.textContent = timeStr();
+    pop(dom.updatedVal);
+  }
+
+  // ── Level ──
   if (level !== prev.level) {
     if (prev.level !== null) {
       const pip = level === "FULL" ? "green" : level === "HALF" ? "amber" : level === "ERROR" ? "red" : "blue";
@@ -256,8 +290,72 @@ onValue(ref(db, "WaterTank"), snap => {
         level === "HALF"  ? "Tank is at half capacity" :
         level === "EMPTY" ? "Tank is now empty — time to refill!" :
         level === "ERROR" ? "Sensor check needed — something's off" :
-        `Level shifted to ${level}`;
+        `Level changed to ${level}`;
       addLog(txt, pip);
+    }
+    prev.level = level;
+    renderLevel(level);
+  }
+
+  // ── Low sensor ──
+  if (low !== prev.low) {
+    if (prev.low !== null) {
+      addLog(
+        low ? "Water detected at the bottom of the tank" : "No water at the bottom of the tank",
+        low ? "green" : "amber"
+      );
+    }
+    prev.low = low;
+  }
+  renderSensor({
+    val: low, valEl: dom.lowVal, badgeEl: dom.lowBadge,
+    pillEl: dom.pillLow, pillValEl: dom.pillLowVal,
+    activeLabel: "Water Present", inactiveLabel: "No Water",
+    pillLabel: "Bottom",
+  });
+
+  // ── High sensor ──
+  if (high !== prev.high) {
+    if (prev.high !== null) {
+      addLog(
+        high ? "Water has reached the top — tank is full!" : "Water level dropped below the top",
+        high ? "green" : "amber"
+      );
+    }
+    prev.high = high;
+  }
+  renderSensor({
+    val: high, valEl: dom.highVal, badgeEl: dom.highBadge,
+    pillEl: dom.pillHigh, pillValEl: dom.pillHighVal,
+    activeLabel: "Water Present", inactiveLabel: "No Water",
+    pillLabel: "Top",
+  });
+
+  // ── Pump ──
+  if (pumpActive !== prev.pumpActive) {
+    if (prev.pumpActive !== null) {
+      addLog(
+        pumpActive ? "Pump relay engaged — water is flowing 🚿" : "Pump relay released — water stopped",
+        pumpActive ? "green" : "blue"
+      );
+    }
+    prev.pumpActive = pumpActive;
+  }
+  if (pumpOverride !== prev.pumpOverride) {
+    if (prev.pumpOverride === true && pumpOverride === false && level === "FULL") {
+      addLog("Pump override reset automatically — tank is full", "amber");
+    }
+    prev.pumpOverride = pumpOverride;
+  }
+  renderPump(pumpActive, pumpOverride, level);
+
+  setConnected(true);
+
+}, err => {
+  setConnected(false);
+  addLog("Unable to read sensor data — check your connection", "red");
+  console.error(err);
+}); addLog(txt, pip);
       broadcastMessage(`Tank volume tracking reports context shifted to: ${level ?? "Unknown State"}.`, "Storage Matrix Alert", level === "ERROR" ? "Attention" : "Nominal");
     }
     prev.level = level;
