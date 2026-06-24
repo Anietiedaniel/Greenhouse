@@ -1,480 +1,352 @@
-/**
- * GreenHouse Water Monitor — app.js
- * Firebase Realtime Database · modular SDK v10
- */
+/* =============================================
+   GREENHOUSE CONTROL CENTER — APP LOGIC
+   ============================================= */
 
-import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, onValue, set }       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-// ── Firebase ─────────────────────────────────────────────────────
+// ================= FIREBASE CONFIG =================
 const firebaseConfig = {
-  apiKey:            "AIzaSyALBmd_8LYo15JPQgnhTKDn_5UGd8sNNKQ",
-  authDomain:        "green-house-firmware.firebaseapp.com",
-  databaseURL:       "https://green-house-firmware-default-rtdb.firebaseio.com",
-  projectId:         "green-house-firmware",
-  storageBucket:     "green-house-firmware.firebasestorage.app",
-  messagingSenderId: "882471532450",
-  appId:             "1:882471532450:web:551019086b7fd3194224fb",
-  measurementId:     "G-5EEW1TTEVN",
+  apiKey: "Hj7AujdCl1ZO3UiZsQ0Se0OxHDxCIhnPdG8i3Wpj",
+  databaseURL: "https://green-house-firmware-default-rtdb.firebaseio.com",
+  projectId: "green-house-firmware"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// ── State ─────────────────────────────────────────────────────────
-let prev = { level: null, low: null, high: null, pumpActive: null, pumpOverride: null };
-let logs = [];
+// ================= STATE =================
+let state = {
+  tankLevel:    null,   // "EMPTY" | "HALF" | "FULL" | "ERROR"
+  pumpActive:   false,
+  pumpOverride: false,
+  autoMode:     false,
+  soilMoisture: null,
+  soilStatus:   null,
+  connected:    false
+};
 
-// ── DOM ───────────────────────────────────────────────────────────
+// ================= DOM REFS =================
 const $ = id => document.getElementById(id);
 
-const dom = {
-  navTime:      $("navTime"),
-  navDate:      $("navDate"),
-  liveBadge:    $("liveBadge"),
+// Header
+const connectionPill = $('connectionPill');
+const connectionText = $('connectionText');
+const lastUpdate     = $('lastUpdate');
 
-  heroStatus:   $("heroStatus"),
-  heroDesc:     $("heroDesc"),
+// Tank
+const tankCard  = $('tankCard');
+const tankBadge = $('tankBadge');
+const tankFill  = $('tankFill');
+const tankLabel = $('tankLabel');
+const tankError = $('tankError');
+const bubbles   = $('bubbles');
 
-  tank:         $("tank"),
-  tankWater:    $("tankWater"),
-  tankPct:      $("tankPct"),
-  tankError:    $("tankError"),
+// Pump
+const pumpCard       = $('pumpCard');
+const pumpBadge      = $('pumpBadge');
+const pumpIconWrap   = $('pumpIconWrap');
+const pumpStatusText = $('pumpStatusText');
+const pumpBtn        = $('pumpBtn');
+const pumpBtnLabel   = $('pumpBtnLabel');
+const pumpNote       = $('pumpNote');
+const pumpLock       = $('pumpLock');
+const modeToggle     = $('modeToggle');
+const modeManual     = $('modeManual');
+const modeAuto       = $('modeAuto');
+const modeSlider     = $('modeSlider');
 
-  pillLow:      $("pillLow"),
-  pillLowVal:   $("pillLowVal"),
-  pillHigh:     $("pillHigh"),
-  pillHighVal:  $("pillHighVal"),
+// Soil
+const soilCard      = $('soilCard');
+const soilBadge     = $('soilBadge');
+const gaugeArc      = $('gaugeArc');
+const soilPct       = $('soilPct');
+const soilCondition = $('soilCondition');
+const soilRec       = $('soilRec');
+const soilError     = $('soilError');
+const waterNeedVal  = $('waterNeedVal');
+const waterNeedBar  = $('waterNeedBar');
+const soilHealthVal = $('soilHealthVal');
+const soilHealthBar = $('soilHealthBar');
+const rootComfortVal= $('rootComfortVal');
+const rootComfortBar= $('rootComfortBar');
+const adviceText    = $('adviceText');
+const toast         = $('toast');
 
-  levelVal:     $("levelVal"),
-  levelBadge:   $("levelBadge"),
+// ================= TOAST =================
+let toastTimer;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
 
-  lowVal:       $("lowVal"),
-  lowBadge:     $("lowBadge"),
+// ================= CONNECTION MONITOR =================
+db.ref('.info/connected').on('value', snap => {
+  state.connected = snap.val() === true;
+  if (state.connected) {
+    connectionPill.className = 'connection-pill live';
+    connectionText.textContent = 'Live';
+  } else {
+    connectionPill.className = 'connection-pill error';
+    connectionText.textContent = 'Offline';
+  }
+});
 
-  highVal:      $("highVal"),
-  highBadge:    $("highBadge"),
-
-  updatedVal:   $("updatedVal"),
-
-  connVal:      $("connVal"),
-  connBadge:    $("connBadge"),
-  connBadgeTxt: $("connBadgeTxt"),
-
-  // Pump UI
-  pumpActiveVal:   $("pumpActiveVal"),
-  pumpActiveBadge: $("pumpActiveBadge"),
-  pumpToggleBtn:   $("pumpToggleBtn"),
-  pumpModeLabel:   $("pumpModeLabel"),
-
-  feed:         $("feed"),
-  clearBtn:     $("clearBtn"),
-  footerDot:    $("footerDot"),
-  footerTxt:    $("footerTxt"),
+// ================= TANK LEVEL =================
+const TANK_FILL_LEVELS = { EMPTY: '5%', HALF: '50%', FULL: '98%', ERROR: '0%' };
+const TANK_FILL_COLORS = {
+  EMPTY: 'rgba(250,204,21,0.4)',
+  HALF:  'rgba(96,165,250,0.5)',
+  FULL:  'rgba(74,222,128,0.5)',
+  ERROR: 'rgba(248,113,113,0.3)'
 };
-
-// ── Clock ─────────────────────────────────────────────────────────
-function tick() {
-  const n = new Date();
-  dom.navTime.textContent = n.toLocaleTimeString("en-GB", { hour12: false });
-  dom.navDate.textContent = n.toLocaleDateString("en-GB", {
-    weekday: "short", day: "numeric", month: "long",
-  });
-}
-tick();
-setInterval(tick, 1000);
-
-// ── Helpers ───────────────────────────────────────────────────────
-const timeStr = (d = new Date()) => d.toLocaleTimeString("en-GB", { hour12: false });
-
-function pop(el) {
-  if (!el) return;
-  el.classList.remove("pop");
-  void el.offsetWidth;
-  el.classList.add("pop");
-  el.addEventListener("animationend", () => el.classList.remove("pop"), { once: true });
-}
-
-// ── Level config ──────────────────────────────────────────────────
-const LEVELS = {
-  FULL:  { pct: 100, heroTxt: "Full",  heroCls: "s-full",  badgeTxt: "Full",    badgeCls: "b-yes",  desc: "Your tank is completely full. 💧" },
-  HALF:  { pct: 50,  heroTxt: "Half",  heroCls: "s-half",  badgeTxt: "Half",    badgeCls: "b-warn", desc: "Your tank is halfway. Consider refilling soon." },
-  EMPTY: { pct: 0,   heroTxt: "Empty", heroCls: "s-empty", badgeTxt: "Empty",   badgeCls: "b-no",   desc: "Your tank is empty. Please refill as soon as possible." },
-  ERROR: { pct: 0,   heroTxt: "Error", heroCls: "s-error", badgeTxt: "Problem", badgeCls: "b-err",  desc: "Something needs attention — check your sensors." },
+const TANK_LABEL_MAP = {
+  EMPTY: 'Tank is Empty',
+  HALF:  'Tank is Half Full',
+  FULL:  'Tank is Full',
+  ERROR: 'Reading Error'
 };
+const TANK_BADGE_MAP  = { EMPTY:'empty', HALF:'half', FULL:'full', ERROR:'error' };
 
-const HERO_CLS_ALL = ["s-full","s-half","s-empty","s-error"];
-const TANK_CLS_ALL = ["v-full","v-error"];
+function updateTankUI(level) {
+  const isError = level === 'ERROR';
 
-// ── Render level ──────────────────────────────────────────────────
-function renderLevel(levelRaw) {
-  const key = (levelRaw ?? "").toUpperCase();
-  const cfg = LEVELS[key];
-  if (!cfg) return;
-
-  dom.heroStatus.textContent = cfg.heroTxt;
-  dom.heroStatus.classList.remove(...HERO_CLS_ALL);
-  dom.heroStatus.classList.add(cfg.heroCls);
-  dom.heroDesc.textContent = cfg.desc;
-  pop(dom.heroStatus);
-
-  dom.tankWater.style.height = cfg.pct + "%";
-  dom.tankPct.textContent    = cfg.pct + "%";
-  dom.tank.classList.remove(...TANK_CLS_ALL);
-  if (key === "FULL")  dom.tank.classList.add("v-full");
-  if (key === "ERROR") dom.tank.classList.add("v-error");
-
-  if (key === "ERROR") dom.tankError.classList.add("show");
-  else                 dom.tankError.classList.remove("show");
-
-  if (dom.levelVal) {
-    dom.levelVal.textContent = cfg.heroTxt;
-    pop(dom.levelVal);
-  }
-  if (dom.levelBadge) {
-    dom.levelBadge.className = "info-card__badge " + cfg.badgeCls;
-    dom.levelBadge.innerHTML = `<span>${cfg.badgeTxt}</span>`;
-  }
-}
-
-// ── Render sensor ─────────────────────────────────────────────────
-function renderSensor({ val, valEl, badgeEl, pillEl, pillValEl, activeLabel, inactiveLabel, pillLabel }) {
-  const isActive = val === true;
-  const unknown  = val === null;
-
-  const dispTxt  = unknown ? "Waiting…" : (isActive ? activeLabel : inactiveLabel);
-  const pillTxt  = unknown ? "—" : (isActive ? "Yes" : "No");
-  const badgeCls = unknown ? "" : (isActive ? "b-yes" : "b-no");
-  const pillCls  = unknown ? "" : (isActive ? "p-active" : "p-inactive");
-
-  if (valEl) {
-    valEl.textContent = dispTxt;
-    pop(valEl);
-  }
-  if (badgeEl) {
-    badgeEl.className = "info-card__badge " + badgeCls;
-    badgeEl.innerHTML = `<span>${pillTxt}</span>`;
-  }
-  if (pillEl) {
-    pillEl.className = "pill " + pillCls;
-    const labelEl = pillEl.querySelector(".pill-label");
-    if (labelEl) labelEl.textContent = pillLabel;
-  }
-  if (pillValEl) {
-    pillValEl.textContent = pillTxt;
-  }
-}
-
-// ── Render pump ───────────────────────────────────────────────────
-function renderPump(pumpActive, pumpOverride, level) {
-  const unknown  = pumpActive === null;
-  const isFull   = (level ?? "").toUpperCase() === "FULL";
-
-  if (dom.pumpActiveVal) {
-    dom.pumpActiveVal.textContent = unknown ? "Waiting…" : (pumpActive ? "Running" : "Idle");
-    pop(dom.pumpActiveVal);
-  }
-  if (dom.pumpActiveBadge) {
-    dom.pumpActiveBadge.className = "info-card__badge " + (unknown ? "" : pumpActive ? "b-yes" : "b-no");
-    dom.pumpActiveBadge.innerHTML = `<span>${unknown ? "—" : pumpActive ? "On" : "Off"}</span>`;
-  }
-
-  if (dom.pumpToggleBtn) {
-    dom.pumpToggleBtn.disabled = isFull;
-    dom.pumpToggleBtn.textContent = pumpOverride ? "Turn Pump Off" : "Turn Pump On";
-    dom.pumpToggleBtn.className =
-      "pump-btn " + (pumpOverride ? "pump-btn--on" : "pump-btn--off") + (isFull ? " pump-btn--disabled" : "");
-  }
-
-  if (dom.pumpModeLabel) {
-    dom.pumpModeLabel.textContent = isFull
-      ? "Auto shut-off active — tank is full"
-      : "Manual control";
-  }
-}
-
-// ── Pump toggle handler ───────────────────────────────────────────
-let pumpOverrideState = false;
-let currentLevel      = null;
-
-if (dom.pumpToggleBtn) {
-  dom.pumpToggleBtn.addEventListener("click", async () => {
-    const isFull = (currentLevel ?? "").toUpperCase() === "FULL";
-    if (isFull) return;
-
-    const next = !pumpOverrideState;
-    try {
-      await set(ref(db, "/WaterTank/PumpOverride"), next);
-      addLog(next ? "Pump turned ON manually 🚿" : "Pump turned OFF manually", next ? "green" : "amber");
-    } catch (e) {
-      addLog("Failed to send pump command — check connection", "red");
-      console.error(e);
-    }
-  });
-}
-
-// ── Activity log ──────────────────────────────────────────────────
-function addLog(msg, pip = "green") {
-  logs.unshift({ msg, pip, t: timeStr() });
-  if (logs.length > 40) logs.pop();
-  renderFeed();
-}
-
-function renderFeed() {
-  if (!dom.feed) return;
-  if (!logs.length) {
-    dom.feed.innerHTML = '<div class="feed-empty">Waiting for updates from your greenhouse…</div>';
+  tankError.classList.toggle('hidden', !isError);
+  if (isError) {
+    tankBadge.textContent = 'Error';
+    tankBadge.className   = 'badge error';
+    tankLabel.textContent = 'Reading Error';
+    tankFill.style.height = '0%';
+    bubbles.classList.add('hidden');
     return;
   }
-  dom.feed.innerHTML = logs.map(l => `
-    <div class="log-row">
-      <span class="log-time">${l.t}</span>
-      <span class="log-pip pip-${l.pip}"></span>
-      <span class="log-text">${l.msg}</span>
-    </div>
-  `).join("");
+
+  tankBadge.textContent = level.charAt(0) + level.slice(1).toLowerCase();
+  tankBadge.className   = 'badge ' + TANK_BADGE_MAP[level];
+  tankFill.style.height = TANK_FILL_LEVELS[level];
+  tankFill.style.background = TANK_FILL_COLORS[level];
+  tankLabel.textContent = TANK_LABEL_MAP[level];
+
+  // Bubbles only when water present & not full
+  const hasBubbles = level === 'HALF';
+  bubbles.classList.toggle('hidden', !hasBubbles);
 }
 
-if (dom.clearBtn) {
-  dom.clearBtn.addEventListener("click", () => { logs = []; renderFeed(); });
-}
+db.ref('/WaterTank/Level').on('value', snap => {
+  const level = snap.val();
+  if (!level) return;
+  state.tankLevel = level;
+  updateTankUI(level);
+  updatePumpUI();
+  updateTimestamp();
+});
 
-// ── Connection UI ─────────────────────────────────────────────────
-function setConnected(on) {
-  if (dom.liveBadge) dom.liveBadge.classList.toggle("off", !on);
-  if (dom.connVal) dom.connVal.textContent = on ? "Connected" : "Disconnected";
-  if (dom.connBadge) dom.connBadge.className = "info-card__badge " + (on ? "b-yes" : "b-no");
-  if (dom.connBadgeTxt) dom.connBadgeTxt.textContent = on ? "Online" : "Offline";
-  if (dom.footerDot) dom.footerDot.classList.toggle("on", on);
-  if (dom.footerTxt) {
-    dom.footerTxt.textContent = on
-      ? "Live — receiving updates from your greenhouse"
-      : "Reconnecting to your greenhouse…";
+// ================= PUMP STATE =================
+db.ref('/WaterTank/PumpActiveState').on('value', snap => {
+  state.pumpActive = snap.val() === true;
+  updatePumpUI();
+});
+
+db.ref('/WaterTank/PumpOverride').on('value', snap => {
+  state.pumpOverride = snap.val() === true;
+  updatePumpUI();
+});
+
+function updatePumpUI() {
+  const isFull   = state.tankLevel === 'FULL';
+  const isError  = state.tankLevel === 'ERROR';
+  const isOn     = state.pumpActive;
+  const isAuto   = state.autoMode;
+
+  // Lock overlay when full
+  pumpLock.classList.toggle('hidden', !isFull);
+
+  // Pump icon animation
+  if (isOn) {
+    pumpIconWrap.classList.add('active');
+    pumpStatusText.textContent = 'Pump Running';
+    pumpStatusText.classList.add('active');
+    pumpBadge.textContent = 'On';
+    pumpBadge.className = 'badge on';
+  } else {
+    pumpIconWrap.classList.remove('active');
+    pumpStatusText.textContent = 'Pump Stopped';
+    pumpStatusText.classList.remove('active');
+    pumpBadge.textContent = 'Off';
+    pumpBadge.className = 'badge off';
+  }
+
+  // Button state
+  if (isFull || isError || isAuto) {
+    pumpBtn.disabled = true;
+  } else {
+    pumpBtn.disabled = false;
+  }
+
+  // Button label & style (reflects current state — pressing will TOGGLE)
+  if (isOn) {
+    pumpBtnLabel.textContent = 'Turn Off Pump';
+    pumpBtn.classList.add('on');
+  } else {
+    pumpBtnLabel.textContent = 'Turn On Pump';
+    pumpBtn.classList.remove('on');
+  }
+
+  // Notes
+  if (isFull) {
+    pumpNote.textContent = 'Tank reached maximum. Pump turned off automatically.';
+  } else if (isError) {
+    pumpNote.textContent = 'Sensor conflict detected — pump controls paused.';
+  } else if (isAuto) {
+    pumpNote.textContent = 'Auto mode is active. Controls are handled automatically.';
+  } else if (isOn) {
+    pumpNote.textContent = 'Water is flowing. Tap to stop.';
+  } else {
+    pumpNote.textContent = 'Tap to start watering your plants.';
   }
 }
 
-// ── Firebase listeners ────────────────────────────────────────────
+// ================= PUMP BUTTON =================
+pumpBtn.addEventListener('click', () => {
+  if (pumpBtn.disabled) return;
 
-// Connection state
-onValue(ref(db, ".info/connected"), snap => {
-  const on = snap.val() === true;
-  setConnected(on);
-  addLog(on ? "Connected — your greenhouse is online 🌿" : "Connection lost — retrying…", on ? "green" : "red");
+  const newState = !state.pumpActive;
+  db.ref('/WaterTank/PumpOverride').set(newState)
+    .then(() => {
+      showToast(newState ? '💧 Pump turned on' : '⛔ Pump turned off');
+    })
+    .catch(() => {
+      showToast('⚠️ Could not reach the device. Check your connection.');
+    });
 });
 
-// WaterTank listener
-onValue(ref(db, "WaterTank"), snap => {
+// ================= MODE TOGGLE =================
+function applyModeUI() {
+  if (state.autoMode) {
+    modeAuto.classList.add('active');
+    modeManual.classList.remove('active');
+    modeSlider.classList.add('auto');
+  } else {
+    modeManual.classList.add('active');
+    modeAuto.classList.remove('active');
+    modeSlider.classList.remove('auto');
+  }
+  updatePumpUI();
+}
+
+modeToggle.addEventListener('click', () => {
+  state.autoMode = !state.autoMode;
+  applyModeUI();
+  showToast(state.autoMode ? '🤖 Auto mode on' : '🖐 Manual mode on');
+});
+
+// Init mode UI
+applyModeUI();
+
+// ================= SOIL GAUGE =================
+// Arc total length for a semicircle of radius 90 at viewBox 200×120
+const ARC_LENGTH = 283;
+
+function getMoistureColor(pct) {
+  if (pct < 30) return '#facc15';   // dry  → yellow
+  if (pct < 70) return '#a3e635';   // moist → lime
+  return '#4ade80';                  // wet  → green
+}
+
+function getSoilAdvice(status, pct) {
+  if (status === 'DRY') return 'Soil needs water soon. Turn on the pump to water your plants before the roots dry out.';
+  if (status === 'MOIST') return 'Soil moisture is at a good level. Plants are healthy and comfortable right now.';
+  if (status === 'WET')  return 'Soil is well saturated. No watering needed — let the soil breathe for a while.';
+  return 'Waiting for soil sensor readings…';
+}
+
+function getSoilConditionLabel(status) {
+  if (status === 'DRY')   return 'Too Dry';
+  if (status === 'MOIST') return 'Just Right';
+  if (status === 'WET')   return 'Well Watered';
+  return '—';
+}
+
+function getSoilRecommendation(status) {
+  if (status === 'DRY')   return 'Water now';
+  if (status === 'MOIST') return 'No action needed';
+  if (status === 'WET')   return 'Skip watering';
+  return '—';
+}
+
+function updateSoilGauge(pct) {
+  const offset = ARC_LENGTH - (pct / 100) * ARC_LENGTH;
+  gaugeArc.style.strokeDashoffset = offset;
+  gaugeArc.style.stroke = getMoistureColor(pct);
+  soilPct.textContent = pct + '%';
+}
+
+function updateHealthBars(pct, status) {
+  // Water Need — inverse of moisture (high if dry)
+  const waterNeed = Math.max(0, 100 - pct);
+  waterNeedBar.style.width = waterNeed + '%';
+  waterNeedVal.textContent = waterNeed + '%';
+
+  // Soil Health — peaks at 50% moisture (moist is perfect)
+  const health = Math.round(100 - Math.abs(pct - 50) * 1.4);
+  soilHealthBar.style.width = Math.max(0, health) + '%';
+  soilHealthVal.textContent = Math.max(0, health) + '%';
+
+  // Root Comfort — follows moisture but drops above 85%
+  const comfort = pct > 85 ? Math.round(100 - (pct - 85) * 3) : Math.round(pct * 1.1);
+  rootComfortBar.style.width = Math.min(100, Math.max(0, comfort)) + '%';
+  rootComfortVal.textContent = Math.min(100, Math.max(0, comfort)) + '%';
+}
+
+db.ref('/Soil').on('value', snap => {
   const data = snap.val();
-  if (!data) { addLog("Waiting for sensor data…", "blue"); return; }
-
-  const level        = data.Level          ?? null;
-  const low          = data.LowSensor      ?? null;
-  const high         = data.HighSensor     ?? null;
-  const pumpActive   = data.PumpActiveState ?? null;
-  const pumpOverride = data.PumpOverride   ?? false;
-
-  currentLevel      = level;
-  pumpOverrideState = pumpOverride;
-
-  if (dom.updatedVal) {
-    dom.updatedVal.textContent = timeStr();
-    pop(dom.updatedVal);
+  if (!data) {
+    soilError.classList.remove('hidden');
+    return;
   }
 
-  // ── Level ──
-  if (level !== prev.level) {
-    if (prev.level !== null) {
-      const pip = level === "FULL" ? "green" : level === "HALF" ? "amber" : level === "ERROR" ? "red" : "blue";
-      const txt =
-        level === "FULL"  ? "Tank is now full 💧" :
-        level === "HALF"  ? "Tank is at half capacity" :
-        level === "EMPTY" ? "Tank is now empty — time to refill!" :
-        level === "ERROR" ? "Sensor check needed — something's off" :
-        `Level changed to ${level}`;
-      addLog(txt, pip);
-    }
-    prev.level = level;
-    renderLevel(level);
+  const pct    = data.Moisture ?? null;
+  const status = data.Status   ?? null;
+  const raw    = data.RawValue ?? null;
+
+  // Validate
+  if (pct === null || pct < 0 || pct > 100 || raw === null) {
+    soilError.classList.remove('hidden');
+    soilBadge.textContent = 'Error';
+    soilBadge.className   = 'badge error';
+    return;
   }
 
-  // ── Low sensor ──
-  if (low !== prev.low) {
-    if (prev.low !== null) {
-      addLog(
-        low ? "Water detected at the bottom of the tank" : "No water at the bottom of the tank",
-        low ? "green" : "amber"
-      );
-    }
-    prev.low = low;
-  }
-  renderSensor({
-    val: low, valEl: dom.lowVal, badgeEl: dom.lowBadge,
-    pillEl: dom.pillLow, pillValEl: dom.pillLowVal,
-    activeLabel: "Water Present", inactiveLabel: "No Water",
-    pillLabel: "Bottom",
-  });
+  soilError.classList.add('hidden');
+  state.soilMoisture = pct;
+  state.soilStatus   = status;
 
-  // ── High sensor ──
-  if (high !== prev.high) {
-    if (prev.high !== null) {
-      addLog(
-        high ? "Water has reached the top — tank is full!" : "Water level dropped below the top",
-        high ? "green" : "amber"
-      );
-    }
-    prev.high = high;
-  }
-  renderSensor({
-    val: high, valEl: dom.highVal, badgeEl: dom.highBadge,
-    pillEl: dom.pillHigh, pillValEl: dom.pillHighVal,
-    activeLabel: "Water Present", inactiveLabel: "No Water",
-    pillLabel: "Top",
-  });
+  // Badge
+  const badgeMap = { DRY: 'dry', MOIST: 'moist', WET: 'wet' };
+  const badgeLbl = { DRY: 'Dry', MOIST: 'Moist', WET: 'Wet' };
+  soilBadge.textContent = badgeLbl[status] || status;
+  soilBadge.className   = 'badge ' + (badgeMap[status] || '');
 
-  // ── Pump ──
-  if (pumpActive !== prev.pumpActive) {
-    if (prev.pumpActive !== null) {
-      addLog(
-        pumpActive ? "Pump relay engaged — water is flowing 🚿" : "Pump relay released — water stopped",
-        pumpActive ? "green" : "blue"
-      );
-    }
-    prev.pumpActive = pumpActive;
-  }
-  if (pumpOverride !== prev.pumpOverride) {
-    if (prev.pumpOverride === true && pumpOverride === false && level === "FULL") {
-      addLog("Pump override reset automatically — tank is full", "amber");
-    }
-    prev.pumpOverride = pumpOverride;
-  }
-  renderPump(pumpActive, pumpOverride, level);
+  // Gauge
+  updateSoilGauge(pct);
 
-  setConnected(true);
+  // Status row
+  soilCondition.textContent = getSoilConditionLabel(status);
+  soilRec.textContent       = getSoilRecommendation(status);
 
-}, err => {
-  setConnected(false);
-  addLog("Unable to read sensor data — check your connection", "red");
-  console.error(err);
-}); addLog(txt, pip);
-      broadcastMessage(`Tank volume tracking reports context shifted to: ${level ?? "Unknown State"}.`, "Storage Matrix Alert", level === "ERROR" ? "Attention" : "Nominal");
-    }
-    prev.level = level;
-    renderLevel(level);
-  }
+  // Health bars
+  updateHealthBars(pct, status);
 
-  // Actuator Telemetry Pipeline Updates
-  if (pumpActive !== prev.pumpActive) {
-    if (prev.pumpActive !== null) {
-      addLog(
-        pumpActive ? "Pump relay engaged — water is flowing 🚿" : "Pump relay released — water stopped",
-        pumpActive ? "green" : "blue"
-      );
-      broadcastMessage(pumpActive ? "Flow sensor validation success. Hydration active." : "Flow circuit disconnected. Loop idling.", "Hardware Broadcast", "Nominal");
-    }
-    prev.pumpActive = pumpActive;
-  }
-  
-  if (pumpOverride !== prev.pumpOverride) {
-    if (prev.pumpOverride === true && pumpOverride === false && level === "FULL") {
-      addLog("Pump override reset automatically — tank is full", "amber");
-      broadcastMessage("Automatic overspill prevention protocol triggered termination of manual runtime loop.", "Firmware Safety Guard", "Protected");
-    }
-    prev.pumpOverride = pumpOverride;
-  }
-  
-  renderPump(pumpActive, pumpOverride, level);
-  setConnected(true);
+  // Advice
+  adviceText.textContent = getSoilAdvice(status, pct);
 
-}, err => {
-  setConnected(false);
-  addLog("Unable to read sensor data — check your connection", "red");
-  broadcastMessage("Failed database operations pipeline sequence completely.", "System Fault", "Failure");
-  console.error(err);
-});h         = data.HighSensor     ?? null;  // bool — analog > 250 threshold
-  const pumpActive   = data.PumpActiveState ?? null; // bool — actual relay state (firmware writes)
-  const pumpOverride = data.PumpOverride   ?? false; // bool — dashboard command (we write)
-
-  // Keep local state in sync for the toggle button
-  currentLevel      = level;
-  pumpOverrideState = pumpOverride;
-
-  // Timestamp
-  dom.updatedVal.textContent = timeStr();
-  pop(dom.updatedVal);
-
-  // ── Level ──
-  if (level !== prev.level) {
-    if (prev.level !== null) {
-      const pip = level === "FULL" ? "green" : level === "HALF" ? "amber" : level === "ERROR" ? "red" : "blue";
-      const txt =
-        level === "FULL"  ? "Tank is now full 💧" :
-        level === "HALF"  ? "Tank is at half capacity" :
-        level === "EMPTY" ? "Tank is now empty — time to refill!" :
-        level === "ERROR" ? "Sensor check needed — something's off" :
-        `Level changed to ${level}`;
-      addLog(txt, pip);
-    }
-    prev.level = level;
-    renderLevel(level);
-  }
-
-  // ── Low sensor ──
-  if (low !== prev.low) {
-    if (prev.low !== null) {
-      addLog(
-        low ? "Water detected at the bottom of the tank" : "No water at the bottom of the tank",
-        low ? "green" : "amber"
-      );
-    }
-    prev.low = low;
-  }
-  renderSensor({
-    val: low, valEl: dom.lowVal, badgeEl: dom.lowBadge,
-    pillEl: dom.pillLow, pillValEl: dom.pillLowVal,
-    activeLabel: "Water Present", inactiveLabel: "No Water",
-    pillLabel: "Bottom",
-  });
-
-  // ── High sensor ──
-  if (high !== prev.high) {
-    if (prev.high !== null) {
-      addLog(
-        high ? "Water has reached the top — tank is full!" : "Water level dropped below the top",
-        high ? "green" : "amber"
-      );
-    }
-    prev.high = high;
-  }
-  renderSensor({
-    val: high, valEl: dom.highVal, badgeEl: dom.highBadge,
-    pillEl: dom.pillHigh, pillValEl: dom.pillHighVal,
-    activeLabel: "Water Present", inactiveLabel: "No Water",
-    pillLabel: "Top",
-  });
-
-  // ── Pump ──
-  if (pumpActive !== prev.pumpActive) {
-    if (prev.pumpActive !== null) {
-      addLog(
-        pumpActive ? "Pump relay engaged — water is flowing 🚿" : "Pump relay released — water stopped",
-        pumpActive ? "green" : "blue"
-      );
-    }
-    prev.pumpActive = pumpActive;
-  }
-  if (pumpOverride !== prev.pumpOverride) {
-    // Log only firmware-forced resets (tank went FULL), not user-initiated ones
-    if (prev.pumpOverride === true && pumpOverride === false && level === "FULL") {
-      addLog("Pump override reset automatically — tank is full", "amber");
-    }
-    prev.pumpOverride = pumpOverride;
-  }
-  renderPump(pumpActive, pumpOverride, level);
-
-  setConnected(true);
-
-}, err => {
-  setConnected(false);
-  addLog("Unable to read sensor data — check your connection", "red");
-  console.error(err);
+  updateTimestamp();
 });
+
+// ================= TIMESTAMP =================
+function updateTimestamp() {
+  const now = new Date();
+  const h   = now.getHours().toString().padStart(2,'0');
+  const m   = now.getMinutes().toString().padStart(2,'0');
+  const s   = now.getSeconds().toString().padStart(2,'0');
+  lastUpdate.textContent = `Updated ${h}:${m}:${s}`;
+}
