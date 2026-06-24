@@ -3,189 +3,238 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GreenHouse — Water Monitor</title>
+  <title>GreenHouse · Control Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- AMBIENT BACKGROUND -->
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
 
-  <div class="bg-orb bg-orb--1"></div>
-  <div class="bg-orb bg-orb--2"></div>
-  <div class="bg-orb bg-orb--3"></div>
-
-  <nav class="navbar">
-    <div class="navbar__inner">
-      <div class="navbar__brand">
-        <div class="navbar__logo">
-          <svg viewBox="0 0 32 32" fill="none">
-            <path d="M16 3C10 3 4 9 4 17c0 5.5 3.5 10 8.5 11.5C13 24 15 19 15 14c3 3 4 8 3.5 13 5-1.5 9.5-7 9.5-10C28 9 22 3 16 3z" fill="currentColor" opacity=".9"/>
-            <path d="M15 14c0 5-2 10-2.5 14.5" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4ade80" opacity="0.2"/>
+            <path d="M7 10c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.5-.66 2.84-1.71 3.76L12 17l-3.29-3.24A4.96 4.96 0 0 1 7 10z" fill="#4ade80"/>
           </svg>
         </div>
-        <div class="navbar__title-group">
-          <span class="navbar__title">GreenHouse</span>
-          <span class="navbar__subtitle">Water Monitor</span>
+        <div>
+          <span class="brand-name">GreenHouse</span>
+          <span class="brand-sub">Control Center</span>
         </div>
       </div>
-
-      <div class="live-badge" id="liveBadge">
-        <span class="live-dot"></span>
-        <span>Live</span>
-      </div>
-
-      <div class="navbar__clock">
-        <div class="navbar__time" id="navTime">--:--:--</div>
-        <div class="navbar__date" id="navDate">Loading…</div>
+      <div class="header-status">
+        <div class="connection-pill" id="connectionPill">
+          <span class="pulse-dot"></span>
+          <span id="connectionText">Connecting…</span>
+        </div>
+        <div class="last-update" id="lastUpdate">—</div>
       </div>
     </div>
-  </nav>
+  </header>
 
+  <!-- MAIN CONTENT -->
   <main class="main">
 
-    <section class="hero">
-      <div class="hero__eyebrow">
-        <span class="hero__dot"></span>
-        Greenhouse Water System
-      </div>
-      <h1 class="hero__title">
-        Water Tank is
-        <span class="hero__status" id="heroStatus">Loading…</span>
-      </h1>
-      <p class="hero__desc" id="heroDesc">Connecting to your greenhouse sensors…</p>
+    <!-- ===== WATER SECTION ===== -->
+    <section class="section-label">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="#60a5fa" opacity="0.8"/></svg>
+      Water System
     </section>
 
-    <div class="grid">
+    <div class="cards-row">
 
-      <div class="tank-card glass">
-        <div class="tank-card__top">
-          <div class="tc-label">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-              <path fill-rule="evenodd" d="M10 2a.75.75 0 01.75.75v.258a33.186 33.186 0 016.668 1.318.75.75 0 01-.336 1.461 31.28 31.28 0 00-1.103-.232l1.702 7.545a.75.75 0 01-.387.832A4.981 4.981 0 0115 14c-.825 0-1.606-.2-2.294-.556a.75.75 0 01-.387-.832l1.77-7.849A31.743 31.743 0 0010 4.5a31.743 31.743 0 00-4.089.263l1.77 7.849a.75.75 0 01-.387.832A4.981 4.981 0 015 14a4.981 4.981 0 01-2.294-.556.75.75 0 01-.387-.832l1.702-7.545c-.37.075-.738.152-1.103.232a.75.75 0 01-.336-1.461 33.186 33.186 0 016.668-1.318V2.75A.75.75 0 0110 2z" clip-rule="evenodd"/>
-            </svg>
-            Water Level
-          </div>
-          <div class="tc-pct" id="tankPct">—</div>
+      <!-- TANK CARD -->
+      <div class="card card-tank" id="tankCard">
+        <div class="card-header">
+          <span class="card-title">Water Tank</span>
+          <span class="badge" id="tankBadge">—</span>
         </div>
 
-        <div class="tank-scene">
-          <div class="tank-vessel" id="tank">
-            <div class="tank-shine"></div>
-
-            <div class="tank-water" id="tankWater">
-              <div class="tank-wave wave-a"></div>
-              <div class="tank-wave wave-b"></div>
-              <div class="bubbles">
-                <div class="bub bub-1"></div>
-                <div class="bub bub-2"></div>
-                <div class="bub bub-3"></div>
-                <div class="bub bub-4"></div>
-                <div class="bub bub-5"></div>
-              </div>
-              <div class="ripple-wrap">
-                <div class="ripple r1"></div>
-                <div class="ripple r2"></div>
-                <div class="ripple r3"></div>
-              </div>
+        <div class="tank-visual-wrap">
+          <div class="tank-outer">
+            <!-- Bubbles -->
+            <div class="bubbles" id="bubbles">
+              <span class="bubble b1"></span>
+              <span class="bubble b2"></span>
+              <span class="bubble b3"></span>
+              <span class="bubble b4"></span>
             </div>
-
+            <!-- Wave fill -->
+            <div class="tank-fill" id="tankFill">
+              <div class="wave"></div>
+              <div class="wave wave2"></div>
+            </div>
+            <!-- Level marks -->
             <div class="tank-marks">
-              <div class="tank-mark" style="bottom:100%"><span>Full</span></div>
-              <div class="tank-mark" style="bottom:50%"><span>Half</span></div>
-              <div class="tank-mark" style="bottom:0%"><span>Empty</span></div>
-            </div>
-
-            <div class="tank-error" id="tankError">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40">
-                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-              <span>Check Required</span>
+              <span class="mark mark-full">FULL</span>
+              <span class="mark mark-half">HALF</span>
+              <span class="mark mark-empty">EMPTY</span>
             </div>
           </div>
+          <div class="tank-label" id="tankLabel">Reading…</div>
         </div>
 
-        <div class="tank-status-container">
-          <div class="status-card-unified">
-            <span class="status-title">Water Status</span>
-            <div class="status-badge-wrapper" id="waterStatusWrapper">
-              <span class="status-indicator-dot"></span>
-              <span class="status-text-val" id="waterStatusText">Half Full</span>
-            </div>
-          </div>
+        <!-- Error state overlay -->
+        <div class="error-overlay hidden" id="tankError">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#f87171" stroke-width="2" stroke-linecap="round"/></svg>
+          <p>Sensor reading conflict.<br/>Check tank sensor connections.</p>
         </div>
       </div>
-      <div class="side-cards">
 
-        <div class="info-card info-card--pump glass" id="cardPump">
-          <div class="info-card__icon ic-cyan">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12h4l3-9 4 18 3-9h4"/>
+      <!-- PUMP CARD -->
+      <div class="card card-pump" id="pumpCard">
+        <div class="card-header">
+          <span class="card-title">Water Pump</span>
+          <span class="badge" id="pumpBadge">—</span>
+        </div>
+
+        <div class="pump-visual">
+          <div class="pump-icon-wrap" id="pumpIconWrap">
+            <svg class="pump-icon" id="pumpIcon" width="48" height="48" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+              <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="12" r="3" fill="currentColor"/>
             </svg>
+            <div class="pump-ring" id="pumpRing"></div>
           </div>
-          <div class="info-card__body">
-            <div class="info-card__lbl">Water Pump</div>
-            <div class="info-card__val" id="pumpActiveVal">Waiting…</div>
-            <div class="pump-mode-label" id="pumpModeLabel">Manual control</div>
-          </div>
-          <div class="info-card__badge" id="pumpActiveBadge"><span>—</span></div>
+          <div class="pump-status-text" id="pumpStatusText">—</div>
         </div>
 
-        <button class="pump-btn pump-btn--off" id="pumpToggleBtn">Turn Pump On</button>
-        
-        <div class="info-card system-notification-card glass" id="notificationCenterCard">
-          <div class="notif-card__header">
-            <div class="info-card__icon ic-purple animate-pulse">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-            </div>
-            <div class="notif-card__title-wrap">
-              <div class="info-card__lbl">System Alerts</div>
-              <div class="notif-card__sub" id="notifTypeLabel">General Broadcast</div>
+        <div class="pump-controls">
+          <div class="mode-row">
+            <span class="mode-label">Mode</span>
+            <div class="mode-toggle" id="modeToggle" title="Switch between Manual and Auto">
+              <span class="mode-opt" id="modeManual">Manual</span>
+              <span class="mode-opt" id="modeAuto">Auto</span>
+              <div class="mode-slider" id="modeSlider"></div>
             </div>
           </div>
-          <div class="notif-card__body">
-            <p class="notification-msg" id="generalNotificationMsg">System active. Monitoring live greenhouse nodes...</p>
-            <div class="notif-badge-row">
-              <span class="badge badge--status" id="notifStatusTag">Online</span>
-              <span class="badge badge--time" id="notifTimeTag">Just Now</span>
-            </div>
-          </div>
+
+          <button class="pump-btn" id="pumpBtn" disabled>
+            <span id="pumpBtnLabel">Turn On Pump</span>
+          </button>
+          <p class="pump-note" id="pumpNote">—</p>
         </div>
 
-      </div>
-      </div>
-    <section class="activity glass">
-      <div class="activity__hd">
-        <div class="activity__title">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style="opacity:.5">
-            <path fill-rule="evenodd" d="M2 3.75A.75.75 0 012.75 3h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zm0 4.167a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75zm0 4.166a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75zm0 4.167a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd"/>
-          </svg>
-          Recent Activity
+        <!-- Full tank lock overlay -->
+        <div class="lock-overlay hidden" id="pumpLock">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="#94a3b8" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/></svg>
+          <p>Tank is full.<br/>Pump stopped automatically.</p>
         </div>
-        <button class="clear-btn" id="clearBtn">Clear</button>
       </div>
-      <div class="activity__feed" id="feed">
-        <div class="feed-empty">Waiting for updates from your greenhouse…</div>
-      </div>
+
+    </div>
+
+    <!-- ===== SOIL SECTION ===== -->
+    <section class="section-label">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 22V12M12 12C12 7 7 4 3 6M12 12C12 7 17 4 21 6" stroke="#a3e635" stroke-width="2" stroke-linecap="round"/></svg>
+      Soil Monitor
     </section>
 
+    <div class="cards-row">
+
+      <!-- SOIL MOISTURE CARD -->
+      <div class="card card-soil" id="soilCard">
+        <div class="card-header">
+          <span class="card-title">Soil Moisture</span>
+          <span class="badge" id="soilBadge">—</span>
+        </div>
+
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 200 120">
+            <!-- Background arc -->
+            <path d="M 20 110 A 90 90 0 0 1 180 110" fill="none" stroke="#1e293b" stroke-width="16" stroke-linecap="round"/>
+            <!-- Colored fill arc -->
+            <path class="gauge-arc" id="gaugeArc" d="M 20 110 A 90 90 0 0 1 180 110" fill="none" stroke="#4ade80" stroke-width="16" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283"/>
+            <!-- Zone ticks -->
+            <line x1="20" y1="110" x2="30" y2="110" stroke="#334155" stroke-width="2"/>
+            <line x1="180" y1="110" x2="170" y2="110" stroke="#334155" stroke-width="2"/>
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-value" id="soilPct">—</div>
+            <div class="gauge-unit">moisture</div>
+          </div>
+          <div class="gauge-labels">
+            <span>Dry</span>
+            <span>Moist</span>
+            <span>Wet</span>
+          </div>
+        </div>
+
+        <div class="soil-status-row">
+          <div class="soil-stat">
+            <span class="soil-stat-label">Condition</span>
+            <span class="soil-stat-val" id="soilCondition">—</span>
+          </div>
+          <div class="soil-divider"></div>
+          <div class="soil-stat">
+            <span class="soil-stat-label">Recommendation</span>
+            <span class="soil-stat-val" id="soilRec">—</span>
+          </div>
+        </div>
+
+        <!-- Soil error -->
+        <div class="error-overlay hidden" id="soilError">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#f87171" stroke-width="2" stroke-linecap="round"/></svg>
+          <p>Soil sensor offline.<br/>Check sensor connection.</p>
+        </div>
+      </div>
+
+      <!-- SOIL INFO CARD -->
+      <div class="card card-soilinfo">
+        <div class="card-header">
+          <span class="card-title">Plant Health</span>
+        </div>
+
+        <div class="health-bars">
+          <div class="hbar-item">
+            <div class="hbar-top">
+              <span class="hbar-label">Water Need</span>
+              <span class="hbar-val" id="waterNeedVal">—</span>
+            </div>
+            <div class="hbar-track"><div class="hbar-fill" id="waterNeedBar" style="width:0%"></div></div>
+          </div>
+          <div class="hbar-item">
+            <div class="hbar-top">
+              <span class="hbar-label">Soil Health</span>
+              <span class="hbar-val" id="soilHealthVal">—</span>
+            </div>
+            <div class="hbar-track"><div class="hbar-fill hbar-fill-green" id="soilHealthBar" style="width:0%"></div></div>
+          </div>
+          <div class="hbar-item">
+            <div class="hbar-top">
+              <span class="hbar-label">Root Comfort</span>
+              <span class="hbar-val" id="rootComfortVal">—</span>
+            </div>
+            <div class="hbar-track"><div class="hbar-fill hbar-fill-yellow" id="rootComfortBar" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="advice-box" id="adviceBox">
+          <div class="advice-icon">💡</div>
+          <p id="adviceText">Waiting for sensor data…</p>
+        </div>
+      </div>
+
+    </div>
   </main>
 
-  <footer class="footer">
-    <div class="footer__inner">
-      <div class="footer__l">
-        <div class="footer-dot" id="footerDot"></div>
-        <span id="footerTxt">Connecting…</span>
-      </div>
-      <div class="footer__r">Updates every 2 seconds</div>
-    </div>
-  </footer>
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
 
-  <script type="module" src="app.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
