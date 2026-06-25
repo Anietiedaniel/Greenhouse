@@ -538,3 +538,18 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* Ensure proper rendering of dual spin-rings for both pump cards */
+.pump-icon-wrap.active .pump-ring {
+  border-color: rgba(74,222,128,0.4);
+  box-shadow: 0 0 20px rgba(74,222,128,0.2);
+  animation: spinRing 3s linear infinite;
+}
+
+/* Safe layout sizing adjustments for the locks overlay text content */
+.lock-overlay p {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.6;
+  text-align: center;
+}
