@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GreenHouse · Control Center</title>
+  <title>DEVAD GreenHouse · Control Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -26,7 +26,7 @@
           </svg>
         </div>
         <div>
-          <span class="brand-name">GreenHouse</span>
+          <span class="brand-name">DEVAD GreenHouse</span>
           <span class="brand-sub">Control Center</span>
         </div>
       </div>
@@ -41,15 +41,16 @@
   </header>
 
   <main class="main">
+    
     <section class="section-label">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="#60a5fa" opacity="0.8"/></svg>
-      Water Harvesting Line
+      Main Water Tank
     </section>
 
     <div class="cards-row">
       <div class="card card-tank" id="tankCard">
         <div class="card-header">
-          <span class="card-title">Storage Level</span>
+          <span class="card-title">Water in Tank</span>
           <span class="badge" id="tankBadge">—</span>
         </div>
         <div class="tank-visual-wrap">
@@ -65,22 +66,22 @@
               <div class="wave wave2"></div>
             </div>
             <div class="tank-marks">
-              <span class="mark mark-full">FULL</span>
-              <span class="mark mark-half">HALF</span>
-              <span class="mark mark-empty">EMPTY</span>
+              <span class="mark mark-full">Full</span>
+              <span class="mark mark-half">Half</span>
+              <span class="mark mark-empty">Empty</span>
             </div>
           </div>
           <div class="tank-label" id="tankLabel">Reading…</div>
         </div>
         <div class="error-overlay hidden" id="tankError">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#f87171" stroke-width="2"/></svg>
-          <p>Sensor error profile detected.<br/>Inspect probe contacts.</p>
+          <p>Sensor reading problem.<br/>Please check tank connections.</p>
         </div>
       </div>
 
       <div class="card card-pump">
         <div class="card-header">
-          <span class="card-title">Tank Fill Pump (P1)</span>
+          <span class="card-title">Refill Pump (P1)</span>
           <span class="badge" id="tankPumpBadge">—</span>
         </div>
         <div class="pump-visual">
@@ -95,7 +96,7 @@
         </div>
         <div class="pump-controls">
           <div class="mode-row">
-            <span class="mode-label">Operation Mode</span>
+            <span class="mode-label">Mode</span>
             <div class="mode-toggle" id="tankModeToggle">
               <span class="mode-opt" id="tankModeManual">Manual</span>
               <span class="mode-opt" id="tankModeAuto">Auto</span>
@@ -103,26 +104,26 @@
             </div>
           </div>
           <button class="pump-btn" id="tankPumpBtn" disabled>
-            <span id="tankPumpBtnLabel">Turn On Pump</span>
+            <span id="tankPumpBtnLabel">Start Pump</span>
           </button>
           <p class="pump-note" id="tankPumpNote">—</p>
         </div>
         <div class="lock-overlay hidden" id="tankPumpLock">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="#94a3b8" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#94a3b8" stroke-width="2"/></svg>
-          <p>Tank is completely full.<br/>Fill channel locked for protection.</p>
+          <p>Locked: Cannot add water because the tank is already full.</p>
         </div>
       </div>
     </div>
 
     <section class="section-label">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 22V12M12 12C12 7 7 4 3 6M12 12C12 7 17 4 21 6" stroke="#a3e635" stroke-width="2"/></svg>
-      Soil Irrigation Feed Line
+      Plant Watering System
     </section>
 
     <div class="cards-row">
       <div class="card card-soil" id="soilCard">
         <div class="card-header">
-          <span class="card-title">Soil Status</span>
+          <span class="card-title">Soil Moisture</span>
           <span class="badge" id="soilBadge">—</span>
         </div>
         <div class="gauge-wrap">
@@ -134,28 +135,28 @@
             <div class="gauge-value" id="soilPct">0%</div>
             <div class="gauge-unit">Moisture</div>
           </div>
-          <div class="gauge-labels"><span>Dry</span><span>Optimal</span><span>Wet</span></div>
+          <div class="gauge-labels"><span>Dry</span><span>Good</span><span>Wet</span></div>
         </div>
         <div class="soil-status-row">
           <div class="soil-stat">
-            <span class="soil-stat-label">Condition</span>
+            <span class="soil-stat-label">Status</span>
             <span class="soil-stat-val" id="soilCondition">—</span>
           </div>
           <div class="soil-divider"></div>
           <div class="soil-stat">
-            <span class="soil-stat-label">Action Target</span>
+            <span class="soil-stat-label">What to do</span>
             <span class="soil-stat-val" id="soilRec">—</span>
           </div>
         </div>
         <div class="error-overlay hidden" id="soilError">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f87171" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="#f87171" stroke-width="2"/></svg>
-          <p>Soil instrumentation failure.<br/>Re-evaluate logic bounds.</p>
+          <p>Soil sensor disconnected.<br/>Please double check probe lines.</p>
         </div>
       </div>
 
       <div class="card card-pump">
         <div class="card-header">
-          <span class="card-title">Irrigation Pump (P2)</span>
+          <span class="card-title">Watering Pump (P2)</span>
           <span class="badge" id="soilPumpBadge">—</span>
         </div>
         <div class="pump-visual">
@@ -170,7 +171,7 @@
         </div>
         <div class="pump-controls">
           <div class="mode-row">
-            <span class="mode-label">Operation Mode</span>
+            <span class="mode-label">Mode</span>
             <div class="mode-toggle" id="soilModeToggle">
               <span class="mode-opt" id="soilModeManual">Manual</span>
               <span class="mode-opt" id="soilModeAuto">Auto</span>
@@ -178,36 +179,36 @@
             </div>
           </div>
           <button class="pump-btn" id="soilPumpBtn" disabled>
-            <span id="soilPumpBtnLabel">Start Irrigation</span>
+            <span id="soilPumpBtnLabel">Water Plants</span>
           </button>
           <p class="pump-note" id="soilPumpNote">—</p>
         </div>
         <div class="lock-overlay hidden" id="soilPumpLock">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="#94a3b8" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#94a3b8" stroke-width="2"/></svg>
-          <p>System Interlocked.<br/>Resource inaccessible at this time.</p>
+          <p>Safety Lock: Pump is off because the tank is empty or soil is already wet.</p>
         </div>
       </div>
     </div>
 
-    <section class="section-label">Performance & Diagnostics</section>
+    <section class="section-label">Plant Health Stats</section>
     <div class="card">
       <div class="health-bars">
         <div class="hbar-item">
-          <div class="hbar-top"><span class="hbar-label">Deficit Water Demand</span><span class="hbar-val" id="waterNeedVal">0%</span></div>
+          <div class="hbar-top"><span class="hbar-label">Thirst Level</span><span class="hbar-val" id="waterNeedVal">0%</span></div>
           <div class="hbar-track"><div class="hbar-fill" id="waterNeedBar"></div></div>
         </div>
         <div class="hbar-item">
-          <div class="hbar-top"><span class="hbar-label">Ecosystem Equilibrium Index</span><span class="hbar-val" id="soilHealthVal">0%</span></div>
+          <div class="hbar-top"><span class="hbar-label">Soil Health</span><span class="hbar-val" id="soilHealthVal">0%</span></div>
           <div class="hbar-track"><div class="hbar-fill hbar-fill-green" id="soilHealthBar"></div></div>
         </div>
         <div class="hbar-item">
-          <div class="hbar-top"><span class="hbar-label">Root Oxygen Comfort Gradient</span><span class="hbar-val" id="rootComfortVal">0%</span></div>
+          <div class="hbar-top"><span class="hbar-label">Root Comfort</span><span class="hbar-val" id="rootComfortVal">0%</span></div>
           <div class="hbar-track"><div class="hbar-fill hbar-fill-yellow" id="rootComfortBar"></div></div>
         </div>
       </div>
       <div class="advice-box">
         <span class="advice-icon">💡</span>
-        <p id="adviceText">Awaiting live firmware system data ingestion...</p>
+        <p id="adviceText">Waiting for real-time sensor information stream...</p>
       </div>
     </div>
   </main>
