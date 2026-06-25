@@ -70,28 +70,35 @@ body {
   justify-content: space-between;
   gap: 12px;
 }
-.brand { display: flex; align-items: center; gap: 10px; }
-.brand-icon {
-  width: 38px; height: 38px;
-  background: rgba(74,222,128,0.1);
-  border: 1px solid rgba(74,222,128,0.25);
-  border-radius: 10px;
-  display: grid; place-items: center;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
+
+.brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 8px; /* Optional: remove if you want sharp corners */
+}
+
 .brand-name {
   display: block;
-  font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--text);
-  letter-spacing: -0.02em;
+  font-size: 1.1rem;
 }
+
 .brand-sub {
   display: block;
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  opacity: 0.75;
 }
 .header-status { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .connection-pill {
