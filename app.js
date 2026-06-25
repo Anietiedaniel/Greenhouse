@@ -14,13 +14,18 @@ const db = firebase.database();
 
 // ================= STATE =================
 let state = {
-  tankLevel:    null,   // "EMPTY" | "HALF" | "FULL" | "ERROR"
-  pumpActive:   false,
-  pumpOverride: false,
-  autoMode:     false,
-  soilMoisture: null,
-  soilStatus:   null,
-  connected:    false
+  tankLevel:        null,   // "EMPTY" | "HALF" | "FULL" | "ERROR"
+  tankPumpActive:   false,  // Pump 1 State
+  tankPumpOverride: false,  // Pump 1 Manual Request State
+  tankAutoMode:     true,   // Pump 1 Mode
+
+  soilMoisture:     null,   // 0 - 100 %
+  soilStatus:       null,   // "DRY" | "MOIST" | "WET"
+  soilPumpActive:   false,  // Pump 2 State
+  soilPumpOverride: false,  // Pump 2 Manual Request State
+  soilAutoMode:     true,   // Pump 2 Mode
+
+  connected:        false
 };
 
 // ================= DOM REFS =================
@@ -31,30 +36,40 @@ const connectionPill = $('connectionPill');
 const connectionText = $('connectionText');
 const lastUpdate     = $('lastUpdate');
 
-// Tank
-const tankCard  = $('tankCard');
+// Tank Card Elements
 const tankBadge = $('tankBadge');
 const tankFill  = $('tankFill');
 const tankLabel = $('tankLabel');
 const tankError = $('tankError');
 const bubbles   = $('bubbles');
 
-// Pump
-const pumpCard       = $('pumpCard');
-const pumpBadge      = $('pumpBadge');
-const pumpIconWrap   = $('pumpIconWrap');
-const pumpStatusText = $('pumpStatusText');
-const pumpBtn        = $('pumpBtn');
-const pumpBtnLabel   = $('pumpBtnLabel');
-const pumpNote       = $('pumpNote');
-const pumpLock       = $('pumpLock');
-const modeToggle     = $('modeToggle');
-const modeManual     = $('modeManual');
-const modeAuto       = $('modeAuto');
-const modeSlider     = $('modeSlider');
+// Pump 1 Elements (Source -> Tank)
+const tankPumpBadge      = $('tankPumpBadge');
+const tankPumpIconWrap   = $('tankPumpIconWrap');
+const tankPumpStatusText = $('tankPumpStatusText');
+const tankPumpBtn        = $('tankPumpBtn');
+const tankPumpBtnLabel   = $('tankPumpBtnLabel');
+const tankPumpNote       = $('tankPumpNote');
+const tankPumpLock       = $('tankPumpLock');
+const tankModeToggle     = $('tankModeToggle');
+const tankModeManual     = $('tankModeManual');
+const tankModeAuto       = $('tankModeAuto');
+const tankModeSlider     = $('tankModeSlider');
 
-// Soil
-const soilCard      = $('soilCard');
+// Pump 2 Elements (Tank -> Soil)
+const soilPumpBadge      = $('soilPumpBadge');
+const soilPumpIconWrap   = $('soilPumpIconWrap');
+const soilPumpStatusText = $('soilPumpStatusText');
+const soilPumpBtn        = $('soilPumpBtn');
+const soilPumpBtnLabel   = $('soilPumpBtnLabel');
+const soilPumpNote       = $('soilPumpNote');
+const soilPumpLock       = $('soilPumpLock');
+const soilModeToggle     = $('soilModeToggle');
+const soilModeManual     = $('soilModeManual');
+const soilModeAuto       = $('soilModeAuto');
+const soilModeSlider     = $('soilModeSlider');
+
+// Soil Analytics Elements
 const soilBadge     = $('soilBadge');
 const gaugeArc      = $('gaugeArc');
 const soilPct       = $('soilPct');
@@ -91,7 +106,7 @@ db.ref('.info/connected').on('value', snap => {
   }
 });
 
-// ================= TANK LEVEL =================
+// ================= WATER TANK UI =================
 const TANK_FILL_LEVELS = { EMPTY: '5%', HALF: '50%', FULL: '98%', ERROR: '0%' };
 const TANK_FILL_COLORS = {
   EMPTY: 'rgba(250,204,21,0.4)',
@@ -109,8 +124,8 @@ const TANK_BADGE_MAP  = { EMPTY:'empty', HALF:'half', FULL:'full', ERROR:'error'
 
 function updateTankUI(level) {
   const isError = level === 'ERROR';
-
   tankError.classList.toggle('hidden', !isError);
+  
   if (isError) {
     tankBadge.textContent = 'Error';
     tankBadge.className   = 'badge error';
@@ -126,227 +141,249 @@ function updateTankUI(level) {
   tankFill.style.background = TANK_FILL_COLORS[level];
   tankLabel.textContent = TANK_LABEL_MAP[level];
 
-  // Bubbles only when water present & not full
-  const hasBubbles = level === 'HALF';
-  bubbles.classList.toggle('hidden', !hasBubbles);
+  // Bubbles present when half full
+  bubbles.classList.toggle('hidden', level !== 'HALF');
 }
 
+// ================= PUMP 1: TANK FILL PUMP UI =================
+function updateTankPumpUI() {
+  const isFull  = state.tankLevel === 'FULL';
+  const isError = state.tankLevel === 'ERROR';
+  const isOn    = state.tankPumpActive;
+  const isAuto  = state.tankAutoMode;
+
+  tankPumpLock.classList.toggle('hidden', !isFull);
+
+  if (isOn) {
+    tankPumpIconWrap.classList.add('active');
+    tankPumpStatusText.textContent = 'Filling Tank...';
+    tankPumpStatusText.classList.add('active');
+    tankPumpBadge.textContent = 'On';
+    tankPumpBadge.className = 'badge on';
+  } else {
+    tankPumpIconWrap.classList.remove('active');
+    tankPumpStatusText.textContent = 'Pump Stopped';
+    tankPumpStatusText.classList.remove('active');
+    tankPumpBadge.textContent = 'Off';
+    tankPumpBadge.className = 'badge off';
+  }
+
+  tankPumpBtn.disabled = (isFull || isError || isAuto);
+
+  if (isOn) {
+    tankPumpBtnLabel.textContent = 'Turn Off Pump';
+    tankPumpBtn.classList.add('on');
+  } else {
+    tankPumpBtnLabel.textContent = 'Turn On Pump';
+    tankPumpBtn.classList.remove('on');
+  }
+
+  if (isFull) {
+    tankPumpNote.textContent = 'Safety Cutoff: Tank is completely full.';
+  } else if (isError) {
+    tankPumpNote.textContent = 'Tank sensor error. Controls suspended.';
+  } else if (isAuto) {
+    tankPumpNote.textContent = 'Automation online. Managing storage levels.';
+  } else {
+    tankPumpNote.textContent = isOn ? 'Pumping water from source. Click to stop.' : 'Manual mode ready. Click to fill tank.';
+  }
+}
+
+// ================= PUMP 2: SOIL WATERING PUMP UI =================
+function updateSoilPumpUI() {
+  const isTankEmpty = state.tankLevel === 'EMPTY';
+  const isSoilWet   = state.soilStatus === 'WET';
+  const isOn        = state.soilPumpActive;
+  const isAuto      = state.soilAutoMode;
+
+  // Interlock overlay conditions
+  const isLocked = isTankEmpty || isSoilWet;
+  soilPumpLock.classList.toggle('hidden', !isLocked);
+  
+  if (isLocked) {
+    const lockText = soilPumpLock.querySelector('p');
+    if (isTankEmpty) lockText.innerHTML = "Hardware Lock:<br/>Cannot water soil while tank is empty.";
+    else if (isSoilWet) lockText.innerHTML = "Satiated Lock:<br/>Soil is wet enough. Prevented overwatering.";
+  }
+
+  if (isOn) {
+    soilPumpIconWrap.classList.add('active');
+    soilPumpStatusText.textContent = 'Watering Soil...';
+    soilPumpStatusText.classList.add('active');
+    soilPumpBadge.textContent = 'On';
+    soilPumpBadge.className = 'badge on';
+  } else {
+    soilPumpIconWrap.classList.remove('active');
+    soilPumpStatusText.textContent = 'Pump Stopped';
+    soilPumpStatusText.classList.remove('active');
+    soilPumpBadge.textContent = 'Off';
+    soilPumpBadge.className = 'badge off';
+  }
+
+  soilPumpBtn.disabled = (isLocked || isAuto);
+
+  if (isOn) {
+    soilPumpBtnLabel.textContent = 'Stop Irrigation';
+    soilPumpBtn.classList.add('on');
+  } else {
+    soilPumpBtnLabel.textContent = 'Start Irrigation';
+    soilPumpBtn.classList.remove('on');
+  }
+
+  if (isTankEmpty) {
+    soilPumpNote.textContent = 'Action Denied: Storage tank running dry.';
+  } else if (isSoilWet) {
+    soilPumpNote.textContent = 'Action Denied: Roots saturated to target thresholds.';
+  } else if (isAuto) {
+    soilPumpNote.textContent = 'Automation active. Regulating target root metrics.';
+  } else {
+    soilPumpNote.textContent = isOn ? 'Irrigation valve open. Click to stop.' : 'Manual access ready. Click to water soil.';
+  }
+}
+
+// ================= CONTROL BUTTON INTERACTION =================
+tankPumpBtn.addEventListener('click', () => {
+  if (tankPumpBtn.disabled) return;
+  const nextOverrideState = !state.tankPumpActive;
+  db.ref('/WaterTank/PumpOverride').set(nextOverrideState)
+    .then(() => showToast(nextOverrideState ? '💧 Source Pump turned on' : '⛔ Source Pump turned off'))
+    .catch(() => showToast('⚠️ Connection error. Verification failed.'));
+});
+
+soilPumpBtn.addEventListener('click', () => {
+  if (soilPumpBtn.disabled) return;
+  const nextOverrideState = !state.soilPumpActive;
+  db.ref('/Soil/PumpOverride').set(nextOverrideState)
+    .then(() => showToast(nextOverrideState ? '🌱 Soil Irrigation started' : '⛔ Soil Irrigation stopped'))
+    .catch(() => showToast('⚠️ Connection error. Verification failed.'));
+});
+
+// ================= AUTOMATION SLIDER TOGGLES =================
+function renderModeUI(pumpType) {
+  if (pumpType === 'tank') {
+    if (state.tankAutoMode) {
+      tankModeAuto.classList.add('active');
+      tankModeManual.classList.remove('active');
+      tankModeSlider.classList.add('auto');
+    } else {
+      tankModeManual.classList.add('active');
+      tankModeAuto.classList.remove('active');
+      tankModeSlider.classList.remove('auto');
+    }
+    updateTankPumpUI();
+  } else if (pumpType === 'soil') {
+    if (state.soilAutoMode) {
+      soilModeAuto.classList.add('active');
+      soilModeManual.classList.remove('active');
+      soilModeSlider.classList.add('auto');
+    } else {
+      soilModeManual.classList.add('active');
+      soilModeAuto.classList.remove('active');
+      soilModeSlider.classList.remove('auto');
+    }
+    updateSoilPumpUI();
+  }
+}
+
+tankModeToggle.addEventListener('click', () => {
+  const nextModeState = !state.tankAutoMode;
+  db.ref('/WaterTank/AutoMode').set(nextModeState)
+    .then(() => showToast(nextModeState ? '🤖 Tank Loop: Auto Mode' : '🖐 Tank Loop: Manual Mode'));
+});
+
+soilModeToggle.addEventListener('click', () => {
+  const nextModeState = !state.soilAutoMode;
+  db.ref('/Soil/AutoMode').set(nextModeState)
+    .then(() => showToast(nextModeState ? '🤖 Soil Loop: Auto Mode' : '🖐 Soil Loop: Manual Mode'));
+});
+
+// ================= FIREBASE DATABASE SYNC LISTENERS =================
+
+// Water Tank Listeners
 db.ref('/WaterTank/Level').on('value', snap => {
-  const level = snap.val();
-  if (!level) return;
-  state.tankLevel = level;
-  updateTankUI(level);
-  updatePumpUI();
+  state.tankLevel = snap.val() || 'ERROR';
+  updateTankUI(state.tankLevel);
+  updateTankPumpUI();
+  updateSoilPumpUI();
   updateTimestamp();
 });
 
-// ================= PUMP STATE =================
 db.ref('/WaterTank/PumpActiveState').on('value', snap => {
-  state.pumpActive = snap.val() === true;
-  updatePumpUI();
+  state.tankPumpActive = snap.val() === true;
+  updateTankPumpUI();
 });
 
-db.ref('/WaterTank/PumpOverride').on('value', snap => {
-  state.pumpOverride = snap.val() === true;
-  updatePumpUI();
+db.ref('/WaterTank/AutoMode').on('value', snap => {
+  state.tankAutoMode = snap.val() !== false; // Default true if absent
+  renderModeUI('tank');
 });
 
-function updatePumpUI() {
-  const isFull   = state.tankLevel === 'FULL';
-  const isError  = state.tankLevel === 'ERROR';
-  const isOn     = state.pumpActive;
-  const isAuto   = state.autoMode;
-
-  // Lock overlay when full
-  pumpLock.classList.toggle('hidden', !isFull);
-
-  // Pump icon animation
-  if (isOn) {
-    pumpIconWrap.classList.add('active');
-    pumpStatusText.textContent = 'Pump Running';
-    pumpStatusText.classList.add('active');
-    pumpBadge.textContent = 'On';
-    pumpBadge.className = 'badge on';
+// Soil Monitor Listeners
+db.ref('/Soil/Moisture').on('value', snap => {
+  const val = snap.val();
+  state.soilMoisture = (val !== null && val >= 0 && val <= 100) ? val : null;
+  if(state.soilMoisture !== null) {
+    soilError.classList.add('hidden');
+    updateSoilGauge(state.soilMoisture);
+    updateHealthBars(state.soilMoisture);
   } else {
-    pumpIconWrap.classList.remove('active');
-    pumpStatusText.textContent = 'Pump Stopped';
-    pumpStatusText.classList.remove('active');
-    pumpBadge.textContent = 'Off';
-    pumpBadge.className = 'badge off';
+    soilError.classList.remove('hidden');
   }
-
-  // Button state
-  if (isFull || isError || isAuto) {
-    pumpBtn.disabled = true;
-  } else {
-    pumpBtn.disabled = false;
-  }
-
-  // Button label & style (reflects current state — pressing will TOGGLE)
-  if (isOn) {
-    pumpBtnLabel.textContent = 'Turn Off Pump';
-    pumpBtn.classList.add('on');
-  } else {
-    pumpBtnLabel.textContent = 'Turn On Pump';
-    pumpBtn.classList.remove('on');
-  }
-
-  // Notes
-  if (isFull) {
-    pumpNote.textContent = 'Tank reached maximum. Pump turned off automatically.';
-  } else if (isError) {
-    pumpNote.textContent = 'Sensor conflict detected — pump controls paused.';
-  } else if (isAuto) {
-    pumpNote.textContent = 'Auto mode is active. Controls are handled automatically.';
-  } else if (isOn) {
-    pumpNote.textContent = 'Water is flowing. Tap to stop.';
-  } else {
-    pumpNote.textContent = 'Tap to start watering your plants.';
-  }
-}
-
-// ================= PUMP BUTTON =================
-pumpBtn.addEventListener('click', () => {
-  if (pumpBtn.disabled) return;
-
-  const newState = !state.pumpActive;
-  db.ref('/WaterTank/PumpOverride').set(newState)
-    .then(() => {
-      showToast(newState ? '💧 Pump turned on' : '⛔ Pump turned off');
-    })
-    .catch(() => {
-      showToast('⚠️ Could not reach the device. Check your connection.');
-    });
+  updateTimestamp();
 });
 
-// ================= MODE TOGGLE =================
-function applyModeUI() {
-  if (state.autoMode) {
-    modeAuto.classList.add('active');
-    modeManual.classList.remove('active');
-    modeSlider.classList.add('auto');
-  } else {
-    modeManual.classList.add('active');
-    modeAuto.classList.remove('active');
-    modeSlider.classList.remove('auto');
-  }
-  updatePumpUI();
-}
+db.ref('/Soil/Status').on('value', snap => {
+  state.soilStatus = snap.val() || '—';
+  
+  const badgeMap = { DRY: 'dry', MOIST: 'moist', WET: 'wet' };
+  soilBadge.textContent = state.soilStatus.charAt(0) + state.soilStatus.slice(1).toLowerCase();
+  soilBadge.className   = 'badge ' + (badgeMap[state.soilStatus] || 'error');
 
-modeToggle.addEventListener('click', () => {
-  state.autoMode = !state.autoMode;
-  applyModeUI();
-  showToast(state.autoMode ? '🤖 Auto mode on' : '🖐 Manual mode on');
+  soilCondition.textContent = state.soilStatus === 'DRY' ? 'Too Dry' : (state.soilStatus === 'WET' ? 'Well Saturated' : 'Just Right');
+  soilRec.textContent       = state.soilStatus === 'DRY' ? 'Water Immediately' : (state.soilStatus === 'WET' ? 'Skip Cycle' : 'Optimal Level');
+  
+  // Update UI Warnings
+  adviceText.textContent = state.soilStatus === 'DRY' ? 'Soil moisture dropped below health threshold. Initiating emergency root rehydration.' :
+                           (state.soilStatus === 'WET' ? 'Saturation bounds maximum reached. Discontinuing additional system routing.' : 
+                           'Soil chemistry context structurally stable. Photosynthetic delivery baseline clear.');
+  
+  updateSoilPumpUI();
 });
 
-// Init mode UI
-applyModeUI();
+db.ref('/Soil/PumpActiveState').on('value', snap => {
+  state.soilPumpActive = snap.val() === true;
+  updateSoilPumpUI();
+});
 
-// ================= SOIL GAUGE =================
-// Arc total length for a semicircle of radius 90 at viewBox 200×120
+db.ref('/Soil/AutoMode').on('value', snap => {
+  state.soilAutoMode = snap.val() !== false; 
+  renderModeUI('soil');
+});
+
+// ================= METRIC CONTEXT GRAPHICS =================
 const ARC_LENGTH = 283;
-
-function getMoistureColor(pct) {
-  if (pct < 30) return '#facc15';   // dry  → yellow
-  if (pct < 70) return '#a3e635';   // moist → lime
-  return '#4ade80';                  // wet  → green
-}
-
-function getSoilAdvice(status, pct) {
-  if (status === 'DRY') return 'Soil needs water soon. Turn on the pump to water your plants before the roots dry out.';
-  if (status === 'MOIST') return 'Soil moisture is at a good level. Plants are healthy and comfortable right now.';
-  if (status === 'WET')  return 'Soil is well saturated. No watering needed — let the soil breathe for a while.';
-  return 'Waiting for soil sensor readings…';
-}
-
-function getSoilConditionLabel(status) {
-  if (status === 'DRY')   return 'Too Dry';
-  if (status === 'MOIST') return 'Just Right';
-  if (status === 'WET')   return 'Well Watered';
-  return '—';
-}
-
-function getSoilRecommendation(status) {
-  if (status === 'DRY')   return 'Water now';
-  if (status === 'MOIST') return 'No action needed';
-  if (status === 'WET')   return 'Skip watering';
-  return '—';
-}
-
 function updateSoilGauge(pct) {
   const offset = ARC_LENGTH - (pct / 100) * ARC_LENGTH;
   gaugeArc.style.strokeDashoffset = offset;
-  gaugeArc.style.stroke = getMoistureColor(pct);
+  gaugeArc.style.stroke = pct < 30 ? '#facc15' : (pct < 70 ? '#a3e635' : '#4ade80');
   soilPct.textContent = pct + '%';
 }
 
-function updateHealthBars(pct, status) {
-  // Water Need — inverse of moisture (high if dry)
+function updateHealthBars(pct) {
   const waterNeed = Math.max(0, 100 - pct);
   waterNeedBar.style.width = waterNeed + '%';
   waterNeedVal.textContent = waterNeed + '%';
 
-  // Soil Health — peaks at 50% moisture (moist is perfect)
   const health = Math.round(100 - Math.abs(pct - 50) * 1.4);
   soilHealthBar.style.width = Math.max(0, health) + '%';
   soilHealthVal.textContent = Math.max(0, health) + '%';
 
-  // Root Comfort — follows moisture but drops above 85%
   const comfort = pct > 85 ? Math.round(100 - (pct - 85) * 3) : Math.round(pct * 1.1);
   rootComfortBar.style.width = Math.min(100, Math.max(0, comfort)) + '%';
   rootComfortVal.textContent = Math.min(100, Math.max(0, comfort)) + '%';
 }
 
-db.ref('/Soil').on('value', snap => {
-  const data = snap.val();
-  if (!data) {
-    soilError.classList.remove('hidden');
-    return;
-  }
-
-  const pct    = data.Moisture ?? null;
-  const status = data.Status   ?? null;
-  const raw    = data.RawValue ?? null;
-
-  // Validate
-  if (pct === null || pct < 0 || pct > 100 || raw === null) {
-    soilError.classList.remove('hidden');
-    soilBadge.textContent = 'Error';
-    soilBadge.className   = 'badge error';
-    return;
-  }
-
-  soilError.classList.add('hidden');
-  state.soilMoisture = pct;
-  state.soilStatus   = status;
-
-  // Badge
-  const badgeMap = { DRY: 'dry', MOIST: 'moist', WET: 'wet' };
-  const badgeLbl = { DRY: 'Dry', MOIST: 'Moist', WET: 'Wet' };
-  soilBadge.textContent = badgeLbl[status] || status;
-  soilBadge.className   = 'badge ' + (badgeMap[status] || '');
-
-  // Gauge
-  updateSoilGauge(pct);
-
-  // Status row
-  soilCondition.textContent = getSoilConditionLabel(status);
-  soilRec.textContent       = getSoilRecommendation(status);
-
-  // Health bars
-  updateHealthBars(pct, status);
-
-  // Advice
-  adviceText.textContent = getSoilAdvice(status, pct);
-
-  updateTimestamp();
-});
-
-// ================= TIMESTAMP =================
 function updateTimestamp() {
   const now = new Date();
-  const h   = now.getHours().toString().padStart(2,'0');
-  const m   = now.getMinutes().toString().padStart(2,'0');
-  const s   = now.getSeconds().toString().padStart(2,'0');
-  lastUpdate.textContent = `Updated ${h}:${m}:${s}`;
+  lastUpdate.textContent = `Updated ${now.toTimeString().split(' ')[0]}`;
 }
