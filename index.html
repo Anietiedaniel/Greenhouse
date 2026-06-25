@@ -6,18 +6,16 @@
   <title>GreenHouse · Control Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- AMBIENT BACKGROUND -->
   <div class="ambient-bg">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
   </div>
 
-  <!-- HEADER -->
   <header class="header">
     <div class="header-inner">
       <div class="brand">
@@ -42,39 +40,30 @@
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
   <main class="main">
-
-    <!-- ===== WATER SECTION ===== -->
     <section class="section-label">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="#60a5fa" opacity="0.8"/></svg>
-      Water System
+      Water Harvesting Line
     </section>
 
     <div class="cards-row">
-
-      <!-- TANK CARD -->
       <div class="card card-tank" id="tankCard">
         <div class="card-header">
-          <span class="card-title">Water Tank</span>
+          <span class="card-title">Storage Level</span>
           <span class="badge" id="tankBadge">—</span>
         </div>
-
         <div class="tank-visual-wrap">
           <div class="tank-outer">
-            <!-- Bubbles -->
             <div class="bubbles" id="bubbles">
               <span class="bubble b1"></span>
               <span class="bubble b2"></span>
               <span class="bubble b3"></span>
               <span class="bubble b4"></span>
             </div>
-            <!-- Wave fill -->
             <div class="tank-fill" id="tankFill">
               <div class="wave"></div>
               <div class="wave wave2"></div>
             </div>
-            <!-- Level marks -->
             <div class="tank-marks">
               <span class="mark mark-full">FULL</span>
               <span class="mark mark-half">HALF</span>
@@ -83,94 +72,70 @@
           </div>
           <div class="tank-label" id="tankLabel">Reading…</div>
         </div>
-
-        <!-- Error state overlay -->
         <div class="error-overlay hidden" id="tankError">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#f87171" stroke-width="2" stroke-linecap="round"/></svg>
-          <p>Sensor reading conflict.<br/>Check tank sensor connections.</p>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#f87171" stroke-width="2"/></svg>
+          <p>Sensor error profile detected.<br/>Inspect probe contacts.</p>
         </div>
       </div>
 
-      <!-- PUMP CARD -->
-      <div class="card card-pump" id="pumpCard">
+      <div class="card card-pump">
         <div class="card-header">
-          <span class="card-title">Water Pump</span>
-          <span class="badge" id="pumpBadge">—</span>
+          <span class="card-title">Tank Fill Pump (P1)</span>
+          <span class="badge" id="tankPumpBadge">—</span>
         </div>
-
         <div class="pump-visual">
-          <div class="pump-icon-wrap" id="pumpIconWrap">
-            <svg class="pump-icon" id="pumpIcon" width="48" height="48" viewBox="0 0 24 24" fill="none">
+          <div class="pump-icon-wrap" id="tankPumpIconWrap">
+            <svg class="pump-icon" width="48" height="48" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
-              <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1.5"/>
             </svg>
-            <div class="pump-ring" id="pumpRing"></div>
+            <div class="pump-ring"></div>
           </div>
-          <div class="pump-status-text" id="pumpStatusText">—</div>
+          <div class="pump-status-text" id="tankPumpStatusText">—</div>
         </div>
-
         <div class="pump-controls">
           <div class="mode-row">
-            <span class="mode-label">Mode</span>
-            <div class="mode-toggle" id="modeToggle" title="Switch between Manual and Auto">
-              <span class="mode-opt" id="modeManual">Manual</span>
-              <span class="mode-opt" id="modeAuto">Auto</span>
-              <div class="mode-slider" id="modeSlider"></div>
+            <span class="mode-label">Operation Mode</span>
+            <div class="mode-toggle" id="tankModeToggle">
+              <span class="mode-opt" id="tankModeManual">Manual</span>
+              <span class="mode-opt" id="tankModeAuto">Auto</span>
+              <div class="mode-slider" id="tankModeSlider"></div>
             </div>
           </div>
-
-          <button class="pump-btn" id="pumpBtn" disabled>
-            <span id="pumpBtnLabel">Turn On Pump</span>
+          <button class="pump-btn" id="tankPumpBtn" disabled>
+            <span id="tankPumpBtnLabel">Turn On Pump</span>
           </button>
-          <p class="pump-note" id="pumpNote">—</p>
+          <p class="pump-note" id="tankPumpNote">—</p>
         </div>
-
-        <!-- Full tank lock overlay -->
-        <div class="lock-overlay hidden" id="pumpLock">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="#94a3b8" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/></svg>
-          <p>Tank is full.<br/>Pump stopped automatically.</p>
+        <div class="lock-overlay hidden" id="tankPumpLock">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="#94a3b8" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#94a3b8" stroke-width="2"/></svg>
+          <p>Tank is completely full.<br/>Fill channel locked for protection.</p>
         </div>
       </div>
-
     </div>
 
-    <!-- ===== SOIL SECTION ===== -->
     <section class="section-label">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 22V12M12 12C12 7 7 4 3 6M12 12C12 7 17 4 21 6" stroke="#a3e635" stroke-width="2" stroke-linecap="round"/></svg>
-      Soil Monitor
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 22V12M12 12C12 7 7 4 3 6M12 12C12 7 17 4 21 6" stroke="#a3e635" stroke-width="2"/></svg>
+      Soil Irrigation Feed Line
     </section>
 
     <div class="cards-row">
-
-      <!-- SOIL MOISTURE CARD -->
       <div class="card card-soil" id="soilCard">
         <div class="card-header">
-          <span class="card-title">Soil Moisture</span>
+          <span class="card-title">Soil Status</span>
           <span class="badge" id="soilBadge">—</span>
         </div>
-
         <div class="gauge-wrap">
           <svg class="gauge-svg" viewBox="0 0 200 120">
-            <!-- Background arc -->
             <path d="M 20 110 A 90 90 0 0 1 180 110" fill="none" stroke="#1e293b" stroke-width="16" stroke-linecap="round"/>
-            <!-- Colored fill arc -->
-            <path class="gauge-arc" id="gaugeArc" d="M 20 110 A 90 90 0 0 1 180 110" fill="none" stroke="#4ade80" stroke-width="16" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283"/>
-            <!-- Zone ticks -->
-            <line x1="20" y1="110" x2="30" y2="110" stroke="#334155" stroke-width="2"/>
-            <line x1="180" y1="110" x2="170" y2="110" stroke="#334155" stroke-width="2"/>
+            <path id="gaugeArc" d="M 20 110 A 90 90 0 0 1 180 110" fill="none" stroke="#4ade80" stroke-width="16" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283"/>
           </svg>
           <div class="gauge-center">
-            <div class="gauge-value" id="soilPct">—</div>
-            <div class="gauge-unit">moisture</div>
+            <div class="gauge-value" id="soilPct">0%</div>
+            <div class="gauge-unit">Moisture</div>
           </div>
-          <div class="gauge-labels">
-            <span>Dry</span>
-            <span>Moist</span>
-            <span>Wet</span>
-          </div>
+          <div class="gauge-labels"><span>Dry</span><span>Optimal</span><span>Wet</span></div>
         </div>
-
         <div class="soil-status-row">
           <div class="soil-stat">
             <span class="soil-stat-label">Condition</span>
@@ -178,63 +143,79 @@
           </div>
           <div class="soil-divider"></div>
           <div class="soil-stat">
-            <span class="soil-stat-label">Recommendation</span>
+            <span class="soil-stat-label">Action Target</span>
             <span class="soil-stat-val" id="soilRec">—</span>
           </div>
         </div>
-
-        <!-- Soil error -->
         <div class="error-overlay hidden" id="soilError">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#f87171" stroke-width="2" stroke-linecap="round"/></svg>
-          <p>Soil sensor offline.<br/>Check sensor connection.</p>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f87171" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="#f87171" stroke-width="2"/></svg>
+          <p>Soil instrumentation failure.<br/>Re-evaluate logic bounds.</p>
         </div>
       </div>
 
-      <!-- SOIL INFO CARD -->
-      <div class="card card-soilinfo">
+      <div class="card card-pump">
         <div class="card-header">
-          <span class="card-title">Plant Health</span>
+          <span class="card-title">Irrigation Pump (P2)</span>
+          <span class="badge" id="soilPumpBadge">—</span>
         </div>
-
-        <div class="health-bars">
-          <div class="hbar-item">
-            <div class="hbar-top">
-              <span class="hbar-label">Water Need</span>
-              <span class="hbar-val" id="waterNeedVal">—</span>
-            </div>
-            <div class="hbar-track"><div class="hbar-fill" id="waterNeedBar" style="width:0%"></div></div>
+        <div class="pump-visual">
+          <div class="pump-icon-wrap" id="soilPumpIconWrap">
+            <svg class="pump-icon" width="48" height="48" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+              <path d="M19 14c0 3.866-3 7-7 7s-7-3.134-7-7c0-4.75 7-11 7-11s7 6.25 7 11z" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <div class="pump-ring"></div>
           </div>
-          <div class="hbar-item">
-            <div class="hbar-top">
-              <span class="hbar-label">Soil Health</span>
-              <span class="hbar-val" id="soilHealthVal">—</span>
-            </div>
-            <div class="hbar-track"><div class="hbar-fill hbar-fill-green" id="soilHealthBar" style="width:0%"></div></div>
-          </div>
-          <div class="hbar-item">
-            <div class="hbar-top">
-              <span class="hbar-label">Root Comfort</span>
-              <span class="hbar-val" id="rootComfortVal">—</span>
-            </div>
-            <div class="hbar-track"><div class="hbar-fill hbar-fill-yellow" id="rootComfortBar" style="width:0%"></div></div>
-          </div>
+          <div class="pump-status-text" id="soilPumpStatusText">—</div>
         </div>
-
-        <div class="advice-box" id="adviceBox">
-          <div class="advice-icon">💡</div>
-          <p id="adviceText">Waiting for sensor data…</p>
+        <div class="pump-controls">
+          <div class="mode-row">
+            <span class="mode-label">Operation Mode</span>
+            <div class="mode-toggle" id="soilModeToggle">
+              <span class="mode-opt" id="soilModeManual">Manual</span>
+              <span class="mode-opt" id="soilModeAuto">Auto</span>
+              <div class="mode-slider" id="soilModeSlider"></div>
+            </div>
+          </div>
+          <button class="pump-btn" id="soilPumpBtn" disabled>
+            <span id="soilPumpBtnLabel">Start Irrigation</span>
+          </button>
+          <p class="pump-note" id="soilPumpNote">—</p>
+        </div>
+        <div class="lock-overlay hidden" id="soilPumpLock">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="#94a3b8" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#94a3b8" stroke-width="2"/></svg>
+          <p>System Interlocked.<br/>Resource inaccessible at this time.</p>
         </div>
       </div>
+    </div>
 
+    <section class="section-label">Performance & Diagnostics</section>
+    <div class="card">
+      <div class="health-bars">
+        <div class="hbar-item">
+          <div class="hbar-top"><span class="hbar-label">Deficit Water Demand</span><span class="hbar-val" id="waterNeedVal">0%</span></div>
+          <div class="hbar-track"><div class="hbar-fill" id="waterNeedBar"></div></div>
+        </div>
+        <div class="hbar-item">
+          <div class="hbar-top"><span class="hbar-label">Ecosystem Equilibrium Index</span><span class="hbar-val" id="soilHealthVal">0%</span></div>
+          <div class="hbar-track"><div class="hbar-fill hbar-fill-green" id="soilHealthBar"></div></div>
+        </div>
+        <div class="hbar-item">
+          <div class="hbar-top"><span class="hbar-label">Root Oxygen Comfort Gradient</span><span class="hbar-val" id="rootComfortVal">0%</span></div>
+          <div class="hbar-track"><div class="hbar-fill hbar-fill-yellow" id="rootComfortBar"></div></div>
+        </div>
+      </div>
+      <div class="advice-box">
+        <span class="advice-icon">💡</span>
+        <p id="adviceText">Awaiting live firmware system data ingestion...</p>
+      </div>
     </div>
   </main>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
